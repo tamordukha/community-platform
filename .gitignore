@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Flask
+instance/
+.webassets-cache
+.env
+.flaskenv
+
+# База данных
+*.db
+*.sqlite
+*.sqlite3
+
+# Загруженные файлы
+static/uploads/avatars/*
+static/uploads/banners/*
+static/uploads/posts/*
+static/uploads/comments/*
+!static/uploads/avatars/.gitkeep
+!static/uploads/banners/.gitkeep
+!static/uploads/posts/.gitkeep
+!static/uploads/comments/.gitkeep
+
+# Логи
+*.log
+logs/
+app.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Тесты
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
