@@ -1,9 +1,10 @@
 from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort, jsonify
 from models.user import User, get_user_by_id
 from models.post import Post, get_post
-from models.comment import Comment, get_comments_for_post, get_comment, add_comment, update_comment, delete_comment, hide_comment
+from models.comment import Comment, get_comment, add_comment, update_comment, delete_comment, hide_comment
 from utils.permissions import can_edit_comment, can_delete_comment, can_hide_comment
 from config import Config
+
 comments_bp = Blueprint('comments', __name__)
 
 
@@ -106,7 +107,7 @@ def hide_comment(post_id, comment_id):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Comment not found"}), 404
         abort(404)
-    if not can_hide_comment(user, post, comment):
+    if not can_hide_comment(user, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
