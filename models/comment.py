@@ -38,7 +38,7 @@ def add_comment(post_id, user_id, content):
     db.session.add(comment)
     db.session.commit()
 
-def edit_comment(comment_id, content):
+def update_comment(comment_id, content):
     comment = db.session.get(Comment, comment_id)
     
     if comment:

@@ -31,3 +31,8 @@ def can_delete_comment(user, comment):
     if not user:
         return False
     return user.id == comment.author_id or user.role in ("moderator", "admin")
+
+def can_hide_comment(user, post, comment):
+    if not user:
+        return False
+    return user.id == post.author_id or user.role in ("moderator", "admin")
