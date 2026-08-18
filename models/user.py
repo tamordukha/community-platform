@@ -40,3 +40,11 @@ def login_user(tag, password):
         return user
 
     return None
+
+def get_user_by_id(user_id):
+    user = db.session.query(User).filter_by(id=user_id).first()
+    return user
+
+def get_user_by_tag(user_tag):
+    user = db.session.query(User).filter_by(tag=user_tag).first()
+    return user
