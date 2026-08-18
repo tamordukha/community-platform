@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 from database.db import db
-from utils.permissions import can_view_comment, can_edit_comment, can_delete_comment
+from utils.permissions import can_view_comment
 
 class Comment(db.Model):
     __tablename__ = "comments"
