@@ -29,7 +29,7 @@ def get_comments_for_post(post, user=None, sort=1):
     return comments
 
 def get_comment(comment_id):
-    comment = db.session.query(Comment).filter_by(id=comment_id).first()
+    comment = db.session.get(Comment, comment_id)
     return comment
 
 def add_comment(post_id, user_id, content):
