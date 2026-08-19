@@ -67,3 +67,21 @@ def toggle_like_reply(user_id, reply_id):
         reply_like = ReplyLike(user_id=user_id, reply_id=reply_id)
         db.session.add(reply_like)
     db.session.commit()
+
+def get_post_like(user_id, post_id):
+    return db.session.query(PostLike).filter_by(user_id=user_id, post_id=post_id).first()
+
+def get_comment_like(user_id, comment_id):
+    return db.session.query(CommentLike).filter_by(user_id=user_id, comment_id=comment_id).first()
+
+def get_reply_like(user_id, reply_id):
+    return db.session.query(ReplyLike).filter_by(user_id=user_id, reply_id=reply_id).first()
+
+def get_post_likes_count(post_id):
+    return db.session.query(PostLike).filter_by(post_id=post_id).count()
+
+def get_comment_likes_count(comment_id):
+    return db.session.query(CommentLike).filter_by(comment_id=comment_id).count()
+
+def get_reply_likes_count(reply_id):
+    return db.session.query(ReplyLike).filter_by(reply_id=reply_id).count()
