@@ -1,3 +1,5 @@
+from flask import current_app
+import os
 from datetime import datetime, UTC
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import db
@@ -48,3 +50,15 @@ def get_user_by_id(user_id):
 def get_user_by_tag(user_tag):
     user = db.session.query(User).filter_by(tag=user_tag).first()
     return user
+
+def update_user_avatar(user_id, file, filename):
+    file.save(os.path.join(current_app.config["AVATAR_FOLDER"], filename))
+    
+    user = db.session.get(User, user_id)
+    if user:
+        user.avatar = filename
+        db.session.commit()
+
+def update_user_role(user, role):
+    user.role = role
+    db.session.commit()
