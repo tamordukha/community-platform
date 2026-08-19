@@ -19,7 +19,7 @@ def register_routes(app):
     from routes.likes import likes_bp
     from routes.profiles import profiles_bp
     from routes.api import api_bp
-    from routes.follow import follow_bp
+    from routes.follows import follows_bp
     from routes.publics import publics_bp
     from routes.reposts import reposts_bp
 
@@ -30,7 +30,7 @@ def register_routes(app):
     app.register_blueprint(likes_bp)
     app.register_blueprint(profiles_bp)
     app.register_blueprint(api_bp)
-    app.register_blueprint(follow_bp)
+    app.register_blueprint(follows_bp)
     app.register_blueprint(publics_bp)
     app.register_blueprint(reposts_bp)
 
