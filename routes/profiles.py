@@ -58,7 +58,6 @@ def update_avatar(profile_user_id):
 
 
 
-
 @profiles_bp.route("/role/<int:profile_user_id>", methods=["POST"])
 def change_role(profile_user_id):
     if not session.get("user_id") or session.get("role")=="user":

@@ -11,7 +11,6 @@ class Follow(db.Model):
     
     follower = db.relationship('User', foreign_keys=[follower_id], backref=db.backref('following', lazy='dynamic'))
     following = db.relationship('User', foreign_keys=[following_id], backref=db.backref('followers', lazy='dynamic'))
-    following = db.relationship('User', backref=db.backref('follows', lazy='dynamic'))
     
     __table_args__ = (db.UniqueConstraint('follower_id', 'following_id', name='unique_'),)
 
