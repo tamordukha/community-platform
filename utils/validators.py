@@ -2,7 +2,6 @@ import string
 import magic
 from config import Config
 
-
 def is_valid_tag(tag):
     if not tag or len(tag) < 3 or len(tag) > 20:
         return False
@@ -19,6 +18,11 @@ def is_valid_password(password):
     if not password or len(password) < 6 or len(password) > 128:
         return False
     return any(char in string.ascii_uppercase + string.digits for char in password)
+
+def is_valid_bio(description):
+    if description > Config.BIO_MAX_LENGTH:
+        return False
+    return True
 
 def validate_image(file):
     filename = file.filename

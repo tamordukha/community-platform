@@ -16,11 +16,14 @@ class Post(db.Model):
     likes = db.relationship('PostLike', backref='post', lazy='dynamic')
 
 
-def get_posts(user=None, profile_user=None, feed=False):
+def get_posts(user=None, profile_user=None, public=None, feed=False):
     query = db.session.query(Post).order_by(Post.created_at.desc())
     
     if profile_user:
         query = query.filter_by(author_id=profile_user.id)
+
+    if public:
+        query = query.filter_by(public_id=public.id)
     
     posts = [post for post in query.all() if can_view_post(user, post)]
     

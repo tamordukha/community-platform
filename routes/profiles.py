@@ -1,6 +1,7 @@
 from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, abort, flash, jsonify
 from models.user import get_user_by_id, update_user_avatar, update_user_role
 from models.post import get_posts
+from models.repost import get_reposts_for_user
 from utils.permissions import can_modify_role, can_change_role
 from utils.validators import validate_image
 
@@ -20,12 +21,13 @@ def profile(profile_user_id):
         abort(404)
     
     posts = get_posts(user=current_user, profile_user=profile_user)
+    reposts = get_reposts_for_user(user_id=profile_user_id)
 
     return render_template(
         "profile/profile.html", 
         current_user=current_user, 
         profile_user=profile_user, 
-        posts=posts,
+        posts=posts, reposts=reposts,
         can_modify_role=can_modify_role,
         can_change_role=can_change_role,
         show_bottom_bar=True
