@@ -1,5 +1,5 @@
 from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, abort, flash, jsonify
-from models.user import get_user_by_id, update_user_avatar, update_user_role
+from models.user import get_user_by_id, update_user_avatar, update_user_banner, update_user_role
 from models.post import get_posts
 from models.repost import get_reposts_for_user
 from utils.permissions import can_modify_role, can_change_role
@@ -33,6 +33,7 @@ def profile(profile_user_id):
         show_bottom_bar=True
     )
 
+
 @profiles_bp.route("/avatar/<int:profile_user_id>", methods=["POST"])
 def update_avatar(profile_user_id):
     user_id = session.get("user_id")
@@ -58,6 +59,31 @@ def update_avatar(profile_user_id):
     
     return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
 
+
+@profiles_bp.route("/banner/<int:profile_user_id>", methods=["POST"])
+def update_banner(profile_user_id):
+    user_id = session.get("user_id")
+    if not user_id or user_id != profile_user_id:
+        return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
+
+    if "banner" not in request.files:
+        return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
+
+    file = request.files["banner"]
+
+    if file.filename == "":
+        return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
+    if not validate_image(file):
+        flash("Invalid image", "error")
+        return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
+
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{user_id}.{ext}"
+    update_user_banner(user_id, file, filename)
+
+    session['banner'] = filename
+    
+    return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
 
 
 @profiles_bp.route("/role/<int:profile_user_id>", methods=["POST"])

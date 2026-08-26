@@ -42,7 +42,7 @@ def get_public_members(public_id):
     members = db.session.query(PublicMember).filter_by(public_id=public_id).all()
     return members
 
-def create_public(owner_id ,name, tag, avatar=None, banner=None, bio=None):
+def add_public(owner_id ,name, tag, avatar=None, banner=None, bio=None):
     if get_user_by_tag(tag) or get_public_by_tag(tag):
         return None
 
@@ -59,7 +59,7 @@ def create_public(owner_id ,name, tag, avatar=None, banner=None, bio=None):
 
     return public
 
-def edit_public(public_id, name, tag, avatar=None, banner=None, bio=None):
+def update_public(public_id, name, tag, avatar=None, banner=None, bio=None):
     if get_user_by_tag(tag) or get_public_by_tag(tag):
         return False
     existing = get_public_by_tag(tag)
@@ -83,13 +83,14 @@ def delete_public(public_id):
     public = db.session.get(Public, public_id)
 
     if public:
+        PublicMember.query.filter_by(public_id=public_id).delete()
         db.session.delete(public)
         db.session.commit()
         return True
     
     return False
 
-def set_public_avatar(public_id, file, filename):
+def update_public_avatar(public_id, file, filename):
     file.save(os.path.join(current_app.config["AVATAR_FOLDER"], filename))
     
     public = db.session.get(Public, public_id)
@@ -97,6 +98,17 @@ def set_public_avatar(public_id, file, filename):
         public.avatar = filename
         db.session.commit()
 
+def update_public_banner(public_id, file, filename):
+    file.save(os.path.join(current_app.config["BANNER_FOLDER"], filename))
+    
+    public = db.session.get(Public, public_id)
+    if public:
+        public.banner = filename
+        db.session.commit()
+
+    
+def get_member(user_id, public_id):
+    return db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
 
 def get_member_by_id(id):
     member = db.session.query(PublicMember).filter_by(id=id).first()
@@ -113,3 +125,20 @@ def get_member_publics(user_id):
                 .all())
     return publics
 
+def is_member(user_id, public_id):
+    member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id)
+
+def follow_public(user_id, public_id):
+    member = PublicMember(user_id=user_id, public_id=public_id, role="member")
+    db.session.add(member)
+    db.session.commit()
+
+def unfollow_public(user_id, public_id):
+    member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
+    if member:
+        db.session.delete(member)
+        db.session.commit()
+
+def update_member_role(member, role):
+    member.role = role
+    db.session.commit()

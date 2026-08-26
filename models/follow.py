@@ -29,7 +29,7 @@ def unfollow_user(follower_id, following_id):
         db.session.delete(follow)
         db.session.commit()
 
-def is_following_user(follower_id, following_id):
+def is_following(follower_id, following_id):
     follow = db.session.query(Follow).filter_by(follower_id=follower_id, following_id=following_id).first()
     return follow is not None
 

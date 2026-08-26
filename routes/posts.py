@@ -1,7 +1,8 @@
 from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort
 from models.user import User, get_user_by_id
 from models.post import Post, get_posts, get_post, add_post, update_post, delete_post
-from utils.permissions import can_view_post ,can_edit_post, can_delete_post
+from models.public import get_public_by_tag, get_member
+from utils.permissions import can_view_post ,can_edit_post, can_delete_post, can_edit_public
 from config import Config
 
 posts_bp = Blueprint('posts', __name__)
@@ -49,10 +50,38 @@ def create_post():
             return render_template("posts/create.html", error="Content is required", is_public=is_public)
         if len(content) > Config.POST_MAX_LENGTH:
             return render_template("posts/create.html", error=f"Max {Config.POST_MAX_LENGTH} characters", content=content, is_public=is_public)
-        add_post(user.id, content, is_public)
+        add_post(content, is_public, author_id=user.id)
         return redirect(url_for("posts.index"))
     
     return render_template("posts/create.html")
+
+@posts_bp.route("/public/<tag>/post/create", methods=["GET", "POST"])
+def create_public_post(tag):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("auth.login"))
+    
+    public = get_public_by_tag(tag)
+    if not public:
+        abort(404)
+
+    member = get_member(user_id, public.id)
+    if not member:
+        return abort(404)
+
+    if not can_edit_public(member, public):
+        return abort(403)
+
+    if request.method == "POST":
+        content = request.form.get("content")
+        if not content:
+            return render_template("posts/create.html", error="Content is required", public=public)
+        if len(content) > Config.POST_MAX_LENGTH:
+            return render_template("posts/create.html", error=f"Max {Config.POST_MAX_LENGTH} characters", content=content, public=public)
+        add_post(content, is_public=1, public_id=public.id)
+        return redirect(url_for("publics.show_public", tag=tag))
+    
+    return render_template("posts/create.html", public=public)
 
 
 @posts_bp.route("/post/edit/<int:post_id>", methods=["GET","POST"])

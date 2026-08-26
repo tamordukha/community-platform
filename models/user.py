@@ -59,6 +59,14 @@ def update_user_avatar(user_id, file, filename):
         user.avatar = filename
         db.session.commit()
 
+def update_user_banner(user_id, file, filename):
+    file.save(os.path.join(current_app.config["BANNER_FOLDER"], filename))
+    
+    user = db.session.get(User, user_id)
+    if user:
+        user.avatar = filename
+        db.session.commit()
+
 def update_user_role(user, role):
     user.role = role
     db.session.commit()
