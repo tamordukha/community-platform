@@ -10,6 +10,7 @@ class Public(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     tag = db.Column(db.String(50), unique=True, nullable=False)
+    is_banned = db.Column(db.Boolean, default=False, nullable=False)
     avatar = db.Column(db.String(255))
     banner = db.Column(db.String(255))
     bio = db.Column(db.String(150))
@@ -22,6 +23,7 @@ class PublicMember(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     public_id = db.Column(db.Integer, db.ForeignKey('publics.id'), nullable=False)
     role = db.Column(db.String(20), default="member", nullable=False)
+    #is_blocked = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
     user = db.relationship('User', backref=db.backref('public_members', lazy='dynamic'))
@@ -126,7 +128,7 @@ def get_member_publics(user_id):
     return publics
 
 def is_member(user_id, public_id):
-    member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id)
+    member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
 
 def follow_public(user_id, public_id):
     member = PublicMember(user_id=user_id, public_id=public_id, role="member")
@@ -142,3 +144,9 @@ def unfollow_public(user_id, public_id):
 def update_member_role(member, role):
     member.role = role
     db.session.commit()
+
+def toggle_ban_public(public_id):
+    public = db.session.get(Public, public_id)
+    if public:
+        public.is_banned = not public.is_banned
+        db.session.commit()

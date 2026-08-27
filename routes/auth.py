@@ -57,16 +57,16 @@ def login():
         password = request.form.get("password", "").strip()
         
         user = login_user(tag, password)
-        
+
         if user:
+            if user.is_banned:
+                return render_template("auth/login.html", error="User is banned", tag=tag)
             session["user_id"] = user.id
             session["tag"] = user.tag
             session["role"] = user.role
             session["avatar"] = user.avatar
             return redirect(url_for("posts.feed"))
         
-        return render_template("auth/login.html", 
-                            error="Incorrect tag or password",
-                            tag=tag)
+        return render_template("auth/login.html", error="Incorrect tag or password", tag=tag)
     
     return render_template("auth/login.html")

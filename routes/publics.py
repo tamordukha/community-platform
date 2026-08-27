@@ -5,7 +5,8 @@ from models.public import (get_public_by_id, get_public_by_tag,
                            update_public_avatar, update_public_banner,
                            get_member, get_member_by_id,
                            get_public_members, update_member_role,
-                           is_member, follow_public, unfollow_public)
+                           is_member, follow_public, unfollow_public,
+                           toggle_ban_public)
 from models.user import get_user_by_id
 from models.post import get_posts
 from utils.permissions import can_edit_public, can_delete_public, can_change_member_role, can_kick_member
@@ -382,7 +383,6 @@ def kick_member(tag, member_id):
         return abort(404)
 
     if can_kick_member(current_member, member):
-        kicked = True
         unfollow_public(member.user_id, public.id)
     else:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -390,6 +390,34 @@ def kick_member(tag, member_id):
         return abort(403)
         
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return jsonify({"kicked": kicked})
+        return jsonify({"kicked": True})
     
     return redirect(url_for("publics.show_public_followers", tag=tag))
+
+
+@publics_bp.route("/ban/<tag>", methods=["POST"])
+def ban_user(tag):
+    if not session.get("user_id") or session.get("role")=="user":
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Unauthorized"}), 401
+        return redirect(url_for("publics.show_public", tag=tag))
+
+    current_user = get_user_by_id(session["user_id"])
+    public = get_public_by_tag(tag)
+
+    if public is None:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Public not found"}), 404
+        abort(404)
+
+    if current_user.role in ("moderator", "admin"):
+        toggle_ban_public(public.id)
+    else:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "You cant ban public"}), 403
+        abort(403)
+        
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"banned": True})
+    
+    return redirect(url_for("publics.show_public", tag=tag))

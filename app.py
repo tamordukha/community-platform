@@ -1,7 +1,9 @@
-from flask import Flask
+from flask import Flask, session, redirect, url_for
 from config import Config
 from database.db import db, init_db
 from flask_wtf.csrf import CSRFProtect
+
+from models.user import get_user_by_id
 
 def create_app():
     app = Flask(__name__)
@@ -35,6 +37,15 @@ def register_routes(app):
     app.register_blueprint(reposts_bp)
 
 app = create_app()
+
+@app.before_request
+def check_banned_user():
+    user_id = session.get("user_id")
+    if user_id:
+        user = get_user_by_id(user_id)
+        if user and user.is_banned:
+            session.clear()
+            return redirect(url_for("auth.login"))
 
 if __name__ == "__main__":
     app.run()

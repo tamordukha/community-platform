@@ -12,6 +12,7 @@ class User(db.Model):
     tag = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="user", nullable=False)
+    is_banned = db.Column(db.Boolean, default=False, nullable=False)
     avatar = db.Column(db.String(255))
     banner = db.Column(db.String(255))
     bio = db.Column(db.String(150))
@@ -64,9 +65,16 @@ def update_user_banner(user_id, file, filename):
     
     user = db.session.get(User, user_id)
     if user:
-        user.avatar = filename
+        user.banner = filename
         db.session.commit()
 
-def update_user_role(user, role):
+def update_user_role(user_id, role):
+    user = db.session.get(User, user_id)
     user.role = role
     db.session.commit()
+
+def toggle_ban_user(user_id):
+    user = db.session.get(User, user_id)
+    if user:
+        user.is_banned = not user.is_banned
+        db.session.commit()

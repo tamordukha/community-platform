@@ -1,5 +1,5 @@
 from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, abort, flash, jsonify
-from models.user import get_user_by_id, update_user_avatar, update_user_banner, update_user_role
+from models.user import get_user_by_id, update_user_avatar, update_user_banner, update_user_role, toggle_ban_user
 from models.post import get_posts
 from models.repost import get_reposts_for_user
 from utils.permissions import can_modify_role, can_change_role
@@ -93,7 +93,7 @@ def change_role(profile_user_id):
             return jsonify({"error": "Unauthorized"}), 401
         return redirect(url_for("profile.profile", profile_user_id=profile_user_id))
     
-    current_user=get_user_by_id(session["user_id"])
+    current_user = get_user_by_id(session["user_id"])
     profile_user = get_user_by_id(profile_user_id)
     new_role = request.form.get("new_role")
 
@@ -103,7 +103,7 @@ def change_role(profile_user_id):
         abort(404)
 
     if can_change_role(current_user, profile_user, new_role):
-        update_user_role(profile_user, new_role)
+        update_user_role(profile_user.id, new_role)
     else:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "You cant change role"}), 403
@@ -111,5 +111,32 @@ def change_role(profile_user_id):
         
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({"new_role": new_role})
+    
+    return redirect(url_for("profile.profile", profile_user_id=profile_user_id))
+
+@profiles_bp.route("/ban/<int:profile_user_id>", methods=["POST"])
+def ban_user(profile_user_id):
+    if not session.get("user_id") or session.get("role")=="user":
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Unauthorized"}), 401
+        return redirect(url_for("profile.profile", profile_user_id=profile_user_id))
+
+    current_user = get_user_by_id(session["user_id"])
+    profile_user = get_user_by_id(profile_user_id)
+
+    if profile_user is None:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "User not found"}), 404
+        abort(404)
+
+    if can_modify_role(current_user, profile_user):
+        toggle_ban_user(profile_user.id)
+    else:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "You cant ban user"}), 403
+        abort(403)
+        
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"banned": True})
     
     return redirect(url_for("profile.profile", profile_user_id=profile_user_id))
