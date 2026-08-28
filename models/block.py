@@ -1,7 +1,5 @@
 from datetime import datetime, UTC
 from database.db import db
-from models.user import get_user_by_tag
-from models.public import Public, PublicMember, get_public_by_id, get_member_by_id
 
 class Block(db.Model):
     __tablename__ = "blocks"
@@ -16,11 +14,19 @@ class Block(db.Model):
     __table_args__ = (db.UniqueConstraint('blocker_id', 'blocked_id', name='unique_block'),)
 
 
-def toggle_block(blocker_type, blocker_id, blocked_type, blocked_id):
-    block = db.session.query(Block).filter_by(blocker_id=blocker_id,
-                                            blocked_id=blocked_id,
-                                            blocker_type=blocker_type,
-                                            blocked_type=blocked_type).first()
+def toggle_block(
+    blocker_type: str,
+    blocker_id: int,
+    blocked_type: str,
+    blocked_id: int) -> None:
+    
+    block = db.session.query(Block).filter_by(
+        blocker_id   = blocker_id,
+        blocked_id   = blocked_id,
+        blocker_type = blocker_type,
+        blocked_type = blocked_type
+    ).first()
+
     if block:
         db.session.delete(block)
     else:
@@ -28,13 +34,22 @@ def toggle_block(blocker_type, blocker_id, blocked_type, blocked_id):
             blocked_id=blocked_id,
             blocker_type=blocker_type,
             blocked_type=blocked_type)
+        
         db.session.add(block)
         
     db.session.commit()
     
-def is_blocked(blocker_type, blocker_id, blocked_type, blocked_id):
-    block = db.session.query(Block).filter_by(blocker_id=blocker_id,
-                                            blocked_id=blocked_id,
-                                            blocker_type=blocker_type,
-                                            blocked_type=blocked_type).first()
+def is_blocked(
+    blocker_type: str,
+    blocker_id: int,
+    blocked_type: str,
+    blocked_id: int) -> bool:
+    
+    block = db.session.query(Block).filter_by(
+        blocker_id   = blocker_id,
+        blocked_id   = blocked_id,
+        blocker_type = blocker_type,
+        blocked_type = blocked_type
+    ).first()
+
     return block is not None

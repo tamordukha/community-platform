@@ -23,7 +23,6 @@ class PublicMember(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     public_id = db.Column(db.Integer, db.ForeignKey('publics.id'), nullable=False)
     role = db.Column(db.String(20), default="member", nullable=False)
-    #is_blocked = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
     user = db.relationship('User', backref=db.backref('public_members', lazy='dynamic'))

@@ -141,3 +141,15 @@ def can_modify_role(current_user, profile_user):
     if current_user.role == "moderator" and profile_user.role == "user":
         return True
     return False
+
+# Block
+def can_block_user(blocker, blocked):
+    if not blocker or not blocked:
+        return False
+    if blocker.id == blocked.id:
+        return False
+    if blocker.role == "admin" and blocked.role != "admin":
+        return True
+    if blocker.role == "moderator" and blocked.role == "user":
+        return True
+    return False
