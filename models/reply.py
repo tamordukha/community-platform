@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 from database.db import db
-from utils.permissions import can_view_reply, can_edit_reply, can_delete_reply, can_hide_reply
+from utils.permissions import can_view_content
 from models.comment import Comment
 
 class Reply(db.Model):
@@ -24,7 +24,7 @@ class Reply(db.Model):
 
 def get_replies_for_post(post, user=None):
     replies = db.session.query(Reply).filter_by(post_id=post.id).all()
-    replies = [reply for reply in replies if can_view_reply(user, post, reply)]
+    replies = [reply for reply in replies if can_view_content(user, post, reply)]
     replies.sort(key=lambda c: c.created_at, reverse=True)
 
     return replies

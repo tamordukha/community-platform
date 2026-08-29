@@ -1,8 +1,10 @@
 from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort
-from models.user import User, get_user_by_id
-from models.post import Post, get_posts, get_post, add_post, update_post, delete_post
+from models.user import get_user_by_id
+from models.post import get_posts, get_post, add_post, update_post, delete_post
+from models.comment import get_comments_for_post
+from models.reply import get_replies_for_post
 from models.public import get_public_by_tag, get_member
-from utils.permissions import can_view_post ,can_edit_post, can_delete_post, can_edit_public
+from utils.permissions import can_view_post, can_edit_post, can_delete_post, can_edit_public
 from config import Config
 
 posts_bp = Blueprint('posts', __name__)
@@ -26,9 +28,13 @@ def show_post(post_id):
     post = get_post(post_id, user)
     if post is None:
         abort(404)
+
+    if not can_view_post(user, post):
+        abort(403)
+    
     sort = request.form.get("sort-input", "1")
-    #comments = get_comments_for_post(post.id, user, sort)
-    #replies = get_replies_for_post(post.id, user)
+    comments = get_comments_for_post(post.id, user, sort)
+    replies = get_replies_for_post(post.id, user)
 
     return render_template(
         "posts/view.html", 
@@ -93,6 +99,9 @@ def edit_post(post_id):
     if post is None:
         abort(404)
 
+    if not can_edit_post(user, post):
+        abort(403)
+
     if request.method == "POST":
         content = request.form.get("content")
         is_public = int(request.form.get('is_public', 1))
@@ -111,6 +120,10 @@ def del_post(post_id):
         return redirect(url_for("auth.login"))
     user = get_user_by_id(session.get("user_id"))
     post = get_post(post_id, user)
+
+    if not can_delete_post(user, post):
+        abort(403)
+
     if post is None:
         abort(404)
     delete_post(post_id)

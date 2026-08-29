@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 from database.db import db
-from utils.permissions import can_view_comment
+from utils.permissions import can_view_content
 
 class Comment(db.Model):
     __tablename__ = "comments"
@@ -20,7 +20,7 @@ class Comment(db.Model):
 def get_comments_for_post(post, user=None, sort=1):
     sort = int(sort) if sort else 1
     comments = db.session.query(Comment).filter_by(post_id=post.id).all()
-    comments = [comment for comment in comments if can_view_comment(user, post, comment)]
+    comments = [comment for comment in comments if can_view_content(user, post, comment)]
     if sort == 1:
         comments.sort(key=lambda c: c.created_at, reverse=True)
     else:
