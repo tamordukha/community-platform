@@ -10,7 +10,7 @@ class PostLike(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
     user = db.relationship('User', backref=db.backref('post_likes', lazy='dynamic'))
-    post = db.relationship('Post', backref=db.backref('post_likes', lazy='dynamic'))
+    post = db.relationship('Post', back_populates='likes')
 
     __table_args__ = (db.UniqueConstraint('user_id', 'post_id', name='unique_post_like'),)
 
@@ -23,7 +23,7 @@ class CommentLike(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
     user = db.relationship('User', backref=db.backref('comment_likes', lazy='dynamic'))
-    comment = db.relationship('Comment', backref=db.backref('comment_likes', lazy='dynamic'))
+    comment = db.relationship('Comment', back_populates='likes')
 
     __table_args__ = (db.UniqueConstraint('user_id', 'comment_id', name='unique_comment_like'),)
 
@@ -36,7 +36,7 @@ class ReplyLike(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
     user = db.relationship('User', backref=db.backref('reply_likes', lazy='dynamic'))
-    reply = db.relationship('Reply', backref=db.backref('reply_likes', lazy='dynamic'))
+    reply = db.relationship('Reply', back_populates='likes')
 
     __table_args__ = (db.UniqueConstraint('user_id', 'reply_id', name='unique_reply_like'),)
 

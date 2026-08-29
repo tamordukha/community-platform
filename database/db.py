@@ -10,6 +10,8 @@ migrate = Migrate()
 def init_db(app):
     db.init_app(app)
     migrate.init_app(app, db)
+
+    import models
     
     # Создаём таблицы (для разработки)
     with app.app_context():

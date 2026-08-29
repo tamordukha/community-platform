@@ -15,7 +15,7 @@ class Post(db.Model):
     
     author = db.relationship('User', backref=db.backref('posts', lazy='dynamic'))
     public = db.relationship('Public', backref=db.backref('public_posts', lazy='dynamic'))
-    likes = db.relationship('PostLike', backref='post', lazy='dynamic')
+    likes = db.relationship('PostLike', back_populates='post', lazy='dynamic')
 
 
 def get_posts(user=None, profile_user=None, public=None, feed=False):
@@ -38,7 +38,7 @@ def get_posts(user=None, profile_user=None, public=None, feed=False):
 
 def get_post(post_id, user=None):
     post = db.session.query(Post).filter_by(id=post_id).first()
-    return post if can_view_post(post, user) else None
+    return post if can_view_post(user, post) else None
 
 def add_post(content, is_public, user_id=None, public_id=None):
     if (user_id is None and public_id is None) or (user_id is not None and public_id is not None):

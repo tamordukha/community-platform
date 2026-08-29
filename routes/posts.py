@@ -13,9 +13,9 @@ def index():
         user = None
     else:
         user = get_user_by_id(session.get("user_id"))
-    posts = get_posts(user)
+    posts = get_posts(user, feed=True)
 
-    return render_template("posts/index.html", posts=posts, user=user, show_bottom_bar=True)
+    return render_template("feed.html", posts=posts, user=user, show_bottom_bar=True)
 
 @posts_bp.route("/post/<int:post_id>", methods=["GET", "POST"])
 def show_post(post_id):

@@ -10,8 +10,8 @@ class Repost(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
-    user = db.relationship('User', backref=db.backref('reposts', lazy='dynamic'))
-    post = db.relationship('Post', backref=db.backref('reposts', lazy='dynamic'))
+    user = db.relationship('User', backref=db.backref('user_reposts', lazy='dynamic'))
+    post = db.relationship('Post', backref=db.backref('post_reposts', lazy='dynamic'))
 
     __table_args__ = (db.UniqueConstraint('user_id', 'post_id', name='unique_repost'),)
 

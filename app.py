@@ -3,7 +3,8 @@ from config import Config
 from database.db import db, init_db
 from flask_wtf.csrf import CSRFProtect
 
-from models.user import get_user_by_id
+#from models.user import get_user_by_id
+from models import *
 
 def create_app():
     app = Flask(__name__)
@@ -24,6 +25,7 @@ def register_routes(app):
     from routes.follows import follows_bp
     from routes.publics import publics_bp
     from routes.reposts import reposts_bp
+    from routes.blocks import blocks_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(posts_bp)
@@ -35,6 +37,7 @@ def register_routes(app):
     app.register_blueprint(follows_bp)
     app.register_blueprint(publics_bp)
     app.register_blueprint(reposts_bp)
+    app.register_blueprint(blocks_bp)
 
 app = create_app()
 

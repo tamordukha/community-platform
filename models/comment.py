@@ -12,9 +12,9 @@ class Comment(db.Model):
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
     
-    author = db.relationship('User', backref=db.backref('comments', lazy='dynamic'))
-    post = db.relationship('Post', backref=db.backref('comments', lazy='dynamic'))
-    likes = db.relationship('CommentLike', backref='comment', lazy='dynamic')
+    author = db.relationship('User', backref=db.backref('user_comments', lazy='dynamic'))
+    post = db.relationship('Post', backref=db.backref('post_comments', lazy='dynamic'))
+    likes = db.relationship('CommentLike', back_populates='comment', lazy='dynamic')
 
 
 def get_comments_for_post(post, user=None, sort=1):

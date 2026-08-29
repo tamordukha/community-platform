@@ -15,11 +15,11 @@ class Reply(db.Model):
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
     
-    author = db.relationship('User', backref=db.backref('replies', lazy='dynamic'))
-    post = db.relationship('Post', backref=db.backref('replies', lazy='dynamic'))
-    comment = db.relationship('Comment', backref=db.backref('replies', lazy='dynamic'))
-    parent_reply = db.relationship('Reply', backref=db.backref('replies', lazy='dynamic'), remote_side=[id])
-    likes = db.relationship('ReplyLike', backref='reply', lazy='dynamic')
+    author = db.relationship('User', backref=db.backref('user_replies', lazy='dynamic'))
+    post = db.relationship('Post', backref=db.backref('post_replies', lazy='dynamic'))
+    comment = db.relationship('Comment', backref=db.backref('comment_replies', lazy='dynamic'))
+    parent_reply = db.relationship('Reply', backref=db.backref('parent_replies', lazy='dynamic'), remote_side=[id])
+    likes = db.relationship('ReplyLike', back_populates='reply', lazy='dynamic')
 
 
 def get_replies_for_post(post, user=None):
