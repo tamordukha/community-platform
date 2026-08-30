@@ -41,11 +41,12 @@ def register():
         
         user = register_user(username=username, tag=tag, password=password)
         
-        session["user_id"] = user.id
-        session["tag"] = user.tag
-        session["role"] = user.role
-        session["avatar"] = user["avatar"]
-        return redirect(url_for("posts.feed"))
+        if user:
+            session["user_id"] = user.id
+            session["tag"] = user.tag
+            session["role"] = user.role
+            session["avatar"] = user.avatar
+            return redirect(url_for("posts.feed"))
     
     return render_template("auth/register.html", error=None)
 

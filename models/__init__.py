@@ -7,3 +7,5 @@ from models.follow import Follow
 from models.repost import Repost
 from models.public import Public, PublicMember
 from models.block import Block
+
+from models.user import get_user_by_id
