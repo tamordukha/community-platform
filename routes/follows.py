@@ -19,7 +19,7 @@ def show_following(user_id):
     if not user:
         abort(404)
     following = get_following(user_id)
-    return render_template("profile/followinghtml", user=user, following=following)
+    return render_template("profile/following.html", user=user, following=following)
 
 
 @follows_bp.route("/follow/<int:user_id>", methods=["POST"])

@@ -12,6 +12,11 @@ def register():
         username = request.form.get("username", "").strip()
         tag = request.form.get("tag", "").strip().lower()
         password = request.form.get("password", "").strip()
+
+        if not username or not password:
+            return render_template("auth/register.html",
+                                error="Username and password are required",
+                                username=username, tag=tag)
         
         if not is_valid_username(username):
             return render_template("auth/register.html", 
@@ -26,7 +31,7 @@ def register():
         if not tag:
             tag = generate_unique_tag(username)
             return render_template("auth/register.html",
-                                info="Tag generated automatically. Confirm to register.",
+                                info="Tag generated automatically. Confirm to register",
                                 username=username, tag=tag)
         
         if not is_valid_tag(tag):

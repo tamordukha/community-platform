@@ -13,7 +13,7 @@ def like_post():
         return redirect(url_for("auth.login"))
 
     user_id = session["user_id"]
-    redirect_to = request.form.get("redirect_to", "index")
+    redirect_to = request.form.get("redirect_to", "feed")
     post_id = request.form.get("post_id")
 
     if not post_id:
@@ -29,7 +29,7 @@ def like_post():
     
     if redirect_to == "post":
         return redirect(url_for("posts.show_post", post_id=post_id))
-    return redirect(url_for("posts.index"))
+    return redirect(url_for("posts.feed"))
 
 
 @likes_bp.route("/comment/like", methods=["POST"])

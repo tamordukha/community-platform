@@ -5,7 +5,6 @@ from app import create_app
 from database.db import db, init_db
 
 from models import *
-from models.user import update_user_role
 
 @pytest.fixture
 def app():
@@ -22,6 +21,10 @@ def app():
         db.create_all()
     
     yield app
+
+    with app.app_context():
+        db.session.remove()
+        db.drop_all()
     
     os.close(db_fd)
     os.unlink(db_path)
@@ -37,13 +40,13 @@ def client(app):
 def auth_client(app):
     client = app.test_client()
     client.post("/register", data={
-        "username": "Username",
+        "username": "username",
         "tag": "user_tag",
-        "password": "user_password",
+        "password": "Password1",
     })
     client.post("/login", data={
         "tag": "user_tag",
-        "password": "user_password",
+        "password": "Password1",
     })
     return client
 
@@ -52,13 +55,13 @@ def auth_client(app):
 def auth_foreign_client(app):
     client = app.test_client()
     client.post("/register", data={
-        "username": "Username2",
+        "username": "username",
         "tag": "user_tag2",
-        "password": "user_password2",
+        "password": "Password1",
     })
     client.post("/login", data={
         "tag": "user_tag2",
-        "password": "user_password2",
+        "password": "Password1",
     })
     return client
 
@@ -67,19 +70,19 @@ def auth_foreign_client(app):
 def auth_mod_client(app):
     client = app.test_client()
     client.post("/register", data={
-        "username": "Moder_username",
+        "username": "moder_username",
         "tag": "moder_tag",
-        "password": "moder_password",
+        "password": "Password1",
     })
     client.post("/login", data={
         "tag": "moder_tag",
-        "password": "moder_password",
+        "password": "Password1",
     })
     
     # Меняем роль напрямую в БД
     with app.app_context():
         user = db.session.query(User).filter_by(tag="moder_tag").first()
-        update_user_role(user.id, "moderator")
+        user.role = "moderator"
     
     return client
 
@@ -88,18 +91,18 @@ def auth_mod_client(app):
 def auth_admin_client(app):
     client = app.test_client()
     client.post("/register", data={
-        "username": "Admin_username",
+        "username": "admin_username",
         "tag": "admin_tag",
-        "password": "admin_password",
+        "password": "Password1",
     })
     client.post("/login", data={
         "tag": "admin_tag",
-        "password": "admin_password",
+        "password": "Password1",
     })
     
     # Меняем роль напрямую в БД
     with app.app_context():
         user = db.session.query(User).filter_by(tag="admin_tag").first()
-        update_user_role(user.id, "admin")
+        user.role = "admin"
     
     return client

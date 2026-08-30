@@ -208,7 +208,7 @@ def del_public(tag):
     if not deleted:
         return redirect(url_for("publics.show_public", tag=tag))
     
-    return redirect(url_for("posts.index"))
+    return redirect(url_for("posts.feed"))
 
 
 @publics_bp.route("/avatar/<int:public_id>", methods=["POST"])

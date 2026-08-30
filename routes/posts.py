@@ -10,7 +10,7 @@ from config import Config
 posts_bp = Blueprint('posts', __name__)
 
 @posts_bp.route("/")
-def index():
+def feed():
     if not session.get("user_id"):
         user = None
     else:
@@ -57,7 +57,7 @@ def create_post():
         if len(content) > Config.POST_MAX_LENGTH:
             return render_template("posts/create.html", error=f"Max {Config.POST_MAX_LENGTH} characters", content=content, is_public=is_public)
         add_post(content, is_public, author_id=user.id)
-        return redirect(url_for("posts.index"))
+        return redirect(url_for("posts.feed"))
     
     return render_template("posts/create.html")
 
@@ -127,4 +127,4 @@ def del_post(post_id):
     if post is None:
         abort(404)
     delete_post(post_id)
-    return redirect(url_for("posts.index"))
+    return redirect(url_for("posts.feed"))
