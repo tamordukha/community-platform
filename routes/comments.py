@@ -96,7 +96,7 @@ def hide_comment(post_id, comment_id):
         return redirect(url_for("auth.login"))
     
     user = get_user_by_id(session.get("user_id"))
-    post = get_post(post_id, user)
+    post = get_post(post_id)
     comment = get_comment(comment_id)
 
     if post is None:

@@ -54,26 +54,31 @@ def auth_client(app):
 @pytest.fixture
 def auth_foreign_client(app):
     client = app.test_client()
+
     client.post("/register", data={
         "username": "username",
         "tag": "user_tag2",
         "password": "Password1",
     })
+
     client.post("/login", data={
         "tag": "user_tag2",
         "password": "Password1",
     })
+    
     return client
 
 
 @pytest.fixture
 def auth_mod_client(app):
     client = app.test_client()
+
     client.post("/register", data={
         "username": "moder_username",
         "tag": "moder_tag",
         "password": "Password1",
     })
+
     client.post("/login", data={
         "tag": "moder_tag",
         "password": "Password1",
@@ -83,18 +88,25 @@ def auth_mod_client(app):
     with app.app_context():
         user = db.session.query(User).filter_by(tag="moder_tag").first()
         user.role = "moderator"
-    
+
+        db.session.commit()
+
+    client.get("/logout")
+    client.post("/login", data={"tag": "moder_tag", "password": "Password1"})
+
     return client
 
 
 @pytest.fixture
 def auth_admin_client(app):
     client = app.test_client()
+
     client.post("/register", data={
         "username": "admin_username",
         "tag": "admin_tag",
         "password": "Password1",
     })
+
     client.post("/login", data={
         "tag": "admin_tag",
         "password": "Password1",
@@ -104,5 +116,10 @@ def auth_admin_client(app):
     with app.app_context():
         user = db.session.query(User).filter_by(tag="admin_tag").first()
         user.role = "admin"
+
+        db.session.commit()
+
+    client.get("/logout")
+    client.post("/login", data={"tag": "admin_tag", "password": "Password1"})
     
     return client

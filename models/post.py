@@ -36,9 +36,9 @@ def get_posts(user=None, profile_user=None, public=None, feed=False):
     
     return posts
 
-def get_post(post_id, user=None):
+def get_post(post_id):
     post = db.session.query(Post).filter_by(id=post_id).first()
-    return post if can_view_post(user, post) else None
+    return post
 
 def add_post(content, is_public, user_id=None, public_id=None):
     if (user_id is None and public_id is None) or (user_id is not None and public_id is not None):

@@ -25,7 +25,9 @@ def show_post(post_id):
         user = None
     else:
         user = get_user_by_id(session.get("user_id"))
-    post = get_post(post_id, user)
+    post = get_post(post_id)
+
+    print(user.role)
     if post is None:
         abort(404)
 
@@ -33,12 +35,13 @@ def show_post(post_id):
         abort(403)
     
     sort = request.form.get("sort-input", "1")
-    comments = get_comments_for_post(post.id, user, sort)
-    replies = get_replies_for_post(post.id, user)
+    comments = get_comments_for_post(post, user, sort)
+    replies = get_replies_for_post(post, user)
 
     return render_template(
         "posts/view.html", 
         post=post, user=user, sort=sort,
+        comments=comments, replies=replies,
         can_edit_post=can_edit_post,
         can_delete_post=can_delete_post,
         )
@@ -56,7 +59,7 @@ def create_post():
             return render_template("posts/create.html", error="Content is required", is_public=is_public)
         if len(content) > Config.POST_MAX_LENGTH:
             return render_template("posts/create.html", error=f"Max {Config.POST_MAX_LENGTH} characters", content=content, is_public=is_public)
-        add_post(content, is_public, author_id=user.id)
+        add_post(content, is_public, user_id=user.id)
         return redirect(url_for("posts.feed"))
     
     return render_template("posts/create.html")
@@ -95,7 +98,7 @@ def edit_post(post_id):
     if not session.get("user_id"):
         return redirect(url_for("auth.login"))
     user = get_user_by_id(session.get("user_id"))
-    post = get_post(post_id, user)
+    post = get_post(post_id)
     if post is None:
         abort(404)
 
@@ -119,12 +122,13 @@ def del_post(post_id):
     if not session.get("user_id"):
         return redirect(url_for("auth.login"))
     user = get_user_by_id(session.get("user_id"))
-    post = get_post(post_id, user)
+    post = get_post(post_id)
 
     if not can_delete_post(user, post):
         abort(403)
 
     if post is None:
         abort(404)
+
     delete_post(post_id)
     return redirect(url_for("posts.feed"))
