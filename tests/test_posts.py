@@ -36,42 +36,29 @@ rules
 
 # Create
 
-def test_create_post_success(auth_client):
-    response = auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
-
+def test_create_post_success(auth_client, create_post):
+    response = create_post(auth_client)
     assert response.status_code == 302
 
 
-def test_create_post_too_long(auth_client):
+def test_create_post_too_long(auth_client, create_post):
     long_content = "a" * (Config.POST_MAX_LENGTH + 1)
 
-    response = auth_client.post("/post/create", data={
-        "content": long_content,
-        "is_public": 1,
-    })
+    response = create_post(auth_client, long_content)
 
     assert response.status_code == 200
     assert b"Max 2000 characters" in response.data
 
 
-def test_create_post_empty_content(auth_client):
-    response = auth_client.post("/post/create", data={
-        "content": "",
-        "is_public": 1,
-    })
+def test_create_post_empty_content(auth_client, create_post):
+    response = create_post(auth_client, "")
 
     assert response.status_code == 200
     assert b"Content is required" in response.data
 
 
-def test_create_post_unauthorized(client):
-    response = client.post("/post/create", data={
-        "content": "",
-        "is_public": 1,
-    })
+def test_create_post_unauthorized(client, create_post):
+    response = create_post(client)
 
     assert response.status_code == 302
     assert response.headers["Location"] == "/login"
@@ -79,11 +66,8 @@ def test_create_post_unauthorized(client):
 
 # Edit
 
-def test_edit_post_success(auth_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_edit_post_success(auth_client, create_post):
+    create_post(auth_client)
 
     response = auth_client.post("/post/edit/1", data={
         "content": "edited post content",
@@ -93,13 +77,10 @@ def test_edit_post_success(auth_client):
     assert response.status_code == 302
 
 
-def test_edit_post_too_long(auth_client):
+def test_edit_post_too_long(auth_client, create_post):
     long_content = "a" * (Config.POST_MAX_LENGTH + 1)
 
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+    create_post(auth_client)
 
     response = auth_client.post("/post/edit/1", data={
         "content": long_content,
@@ -110,11 +91,8 @@ def test_edit_post_too_long(auth_client):
     assert b"Max 2000 characters" in response.data
 
 
-def test_edit_post_empty_content(auth_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_edit_post_empty_content(auth_client, create_post):
+    create_post(auth_client)
 
     response = auth_client.post("/post/edit/1", data={
         "content": "",
@@ -125,11 +103,8 @@ def test_edit_post_empty_content(auth_client):
     assert b"Content is required" in response.data
 
 
-def test_edit_post_unauthorized(client, auth_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_edit_post_unauthorized(client, auth_client, create_post):
+    create_post(auth_client)
 
     response = client.post("/post/edit/1", data={
         "content": "edited post content",
@@ -142,11 +117,8 @@ def test_edit_post_unauthorized(client, auth_client):
 
 # Delete
 
-def test_delete_post_success(auth_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_delete_post_success(auth_client, create_post):
+    create_post(auth_client)
 
     response = auth_client.post("/post/delete/1")
 
@@ -154,11 +126,8 @@ def test_delete_post_success(auth_client):
     assert response.headers["Location"] == "/"
 
 
-def test_delete_post_unauthorized(client, auth_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_delete_post_unauthorized(client, auth_client, create_post):
+    create_post(auth_client)
 
     response = client.post("/post/delete/1")
 
@@ -168,22 +137,16 @@ def test_delete_post_unauthorized(client, auth_client):
 
 # Rules (user)
 
-def test_user_cannot_see_private_post_foreign_user(auth_client, auth_foreign_client):
-    auth_foreign_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 0,
-    })
+def test_user_cannot_see_private_post_foreign_user(auth_client, auth_foreign_client, create_post):
+    create_post(auth_foreign_client, is_public=0)
 
     response = auth_client.post("/post/1")
 
     assert response.status_code == 403
 
 
-def test_user_cannot_edit_post_foreign_user(auth_client, auth_foreign_client):
-    auth_foreign_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_user_cannot_edit_post_foreign_user(auth_client, auth_foreign_client, create_post):
+    create_post(auth_foreign_client)
 
     response = auth_client.post("/post/edit/1", data={
         "content": "edited post content",
@@ -193,11 +156,8 @@ def test_user_cannot_edit_post_foreign_user(auth_client, auth_foreign_client):
     assert response.status_code == 403
 
 
-def test_user_cannot_delete_post_foreign_user(auth_client, auth_foreign_client):
-    auth_foreign_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_user_cannot_delete_post_foreign_user(auth_client, auth_foreign_client, create_post):
+    create_post(auth_foreign_client)
 
     response = auth_client.post("/post/delete/1")
 
@@ -206,21 +166,15 @@ def test_user_cannot_delete_post_foreign_user(auth_client, auth_foreign_client):
 
 # Rules (moderator)
 
-def test_moderator_can_see_private_post_foreign_user(auth_client, auth_mod_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 0,
-    })
+def test_moderator_can_see_private_post_foreign_user(auth_client, auth_mod_client, create_post):
+    create_post(auth_client, is_public=0)
 
     response = auth_mod_client.post("/post/1")
 
     assert response.status_code == 200
 
-def test_moderator_can_delete_post_foreign_user(auth_client, auth_mod_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_moderator_can_delete_post_foreign_user(auth_client, auth_mod_client, create_post):
+    create_post(auth_client)
 
     response = auth_mod_client.post("/post/delete/1")
 
@@ -230,17 +184,13 @@ def test_moderator_can_delete_post_foreign_user(auth_client, auth_mod_client):
 
 # Rules (admin)
 
-def test_admin_can_edit_post_foreign_user(auth_client, auth_admin_client):
-    auth_client.post("/post/create", data={
-        "content": "post content",
-        "is_public": 1,
-    })
+def test_admin_can_edit_post_foreign_user(auth_client, auth_admin_client, create_post):
+    create_post(auth_client)
 
     response = auth_admin_client.post("/post/edit/1", data={
         "content": "edited post content",
         "is_public": 0,
     })
-    print(auth_admin_client)
 
     assert response.status_code == 302
     assert response.headers["Location"] == "/post/1"

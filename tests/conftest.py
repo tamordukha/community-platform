@@ -30,6 +30,7 @@ def app():
     os.unlink(db_path)
 
 
+# Clients
 
 @pytest.fixture
 def client(app):
@@ -123,3 +124,15 @@ def auth_admin_client(app):
     client.post("/login", data={"tag": "admin_tag", "password": "Password1"})
     
     return client
+
+
+# Posts
+
+@pytest.fixture
+def create_post():
+    def _create(client, content="post content", is_public=1):
+        return client.post("/post/create", data={
+            "content": content,
+            "is_public": is_public,
+        })
+    return _create
