@@ -4,4 +4,9 @@
 
 {% for comment in comments %}
     {{ comment.content }}
+
+    {% for reply in replies %}
+        {{ reply.content }}
+    {% endfor %}
+    
 {% endfor %}

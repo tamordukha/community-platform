@@ -2,7 +2,7 @@ from flask import Flask, Blueprint, render_template, request, redirect, url_for,
 from models.user import User, get_user_by_id
 from models.post import Post, get_post
 from models.comment import Comment, get_comment
-from models.reply import Reply, get_reply ,add_reply, add_reply_to_reply, update_reply, delete_reply, hide_reply
+from models.reply import Reply, get_reply ,add_reply, add_reply_to_reply, update_reply, delete_reply, toggle_hide_reply
 from utils.permissions import can_edit_content, can_delete_content, can_hide_content
 from config import Config
 
@@ -17,7 +17,13 @@ def create_reply(post_id, comment_id):
     
     user = get_user_by_id(session.get("user_id"))
     comment = get_comment(comment_id)
+    post = get_post(post_id)
     content = request.form.get("content")
+
+    if post is None:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Post not found"}), 404
+        abort(404)
 
     if comment is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -116,7 +122,12 @@ def del_reply(post_id, comment_id, reply_id):
     user = get_user_by_id(session.get("user_id"))
     comment = get_comment(comment_id)
     reply = get_reply(reply_id)
-    
+    post = get_post(post_id)
+
+    if post is None:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Postnot found"}), 404
+        abort(404)
     if comment is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Comment not found"}), 404
@@ -125,7 +136,7 @@ def del_reply(post_id, comment_id, reply_id):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Reply not found"}), 404
         abort(404)
-    if not can_delete_content(user, reply):
+    if not can_delete_content(user, reply, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
@@ -145,7 +156,7 @@ def hide_reply(post_id, comment_id, reply_id):
         return redirect(url_for("auth.login"))
     
     user = get_user_by_id(session.get("user_id"))
-    post = get_post(post_id, user)
+    post = get_post(post_id)
     comment = get_comment(comment_id)
     reply = get_reply(reply_id)
 
@@ -161,12 +172,12 @@ def hide_reply(post_id, comment_id, reply_id):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Reply not found"}), 404
         abort(404)
-    if not can_hide_content(user, post):
+    if not can_hide_content(user, reply, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
 
-    hide_reply(reply_id)
+    toggle_hide_reply(reply_id)
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({"success": True})

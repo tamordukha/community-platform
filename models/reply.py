@@ -67,7 +67,7 @@ def delete_reply(reply_id):
 
     return False
 
-def hide_reply(reply_id):
+def toggle_hide_reply(reply_id):
     reply = db.session.get(Reply, reply_id)
         
     if reply:

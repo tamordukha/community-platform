@@ -3,9 +3,6 @@ from database.db import db
 from config import Config
 
 from models import *
-from models.post import get_posts, get_post
-from models.comment import get_comment, get_comments_for_post
-from utils.permissions import can_view_content
 
 '''
 comments tests:
@@ -121,7 +118,7 @@ def test_edit_comment_success(auth_client, create_comment):
 def test_edit_comment_too_long(auth_client, create_comment):
     long_content = "a" * (Config.COMMENT_MAX_LENGTH + 1)
 
-    create_comment(auth_client, content="comment content")
+    create_comment(auth_client)
 
     response = auth_client.post(
         "post/1/comment/1/edit",
@@ -136,7 +133,7 @@ def test_edit_comment_too_long(auth_client, create_comment):
 
 
 def test_edit_comment_empty_content(auth_client, create_comment):
-    create_comment(auth_client, content="comment content")
+    create_comment(auth_client)
 
     response = auth_client.post(
         "post/1/comment/1/edit",
