@@ -140,9 +140,18 @@ def test_delete_post_unauthorized(client, auth_client, create_post):
 def test_user_cannot_see_private_post_foreign_user(auth_client, auth_foreign_client, create_post):
     create_post(auth_foreign_client, is_public=0)
 
-    response = auth_client.post("/post/1")
+    response = auth_client.get("/post/1")
 
     assert response.status_code == 403
+
+
+def test_user_cannot_see_private_post_foreign_user_in_feed(auth_client, auth_foreign_client, create_post):
+    create_post(auth_foreign_client, is_public=0)
+
+    response = auth_client.get("/")
+
+    assert response.status_code == 200
+    assert b"post content" not in response.data
 
 
 def test_user_cannot_edit_post_foreign_user(auth_client, auth_foreign_client, create_post):
@@ -169,7 +178,7 @@ def test_user_cannot_delete_post_foreign_user(auth_client, auth_foreign_client, 
 def test_moderator_can_see_private_post_foreign_user(auth_client, auth_mod_client, create_post):
     create_post(auth_client, is_public=0)
 
-    response = auth_mod_client.post("/post/1")
+    response = auth_mod_client.get("/post/1")
 
     assert response.status_code == 200
 

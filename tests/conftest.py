@@ -136,3 +136,17 @@ def create_post():
             "is_public": is_public,
         })
     return _create
+
+
+# Comments
+
+@pytest.fixture
+def create_comment(create_post):
+    def _create(client, content="comment content", is_public=1):
+        create_post(client, is_public=is_public)
+
+        return client.post("/post/1/comment/create", data={
+            "content": content,
+        })
+    
+    return _create

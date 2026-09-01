@@ -61,15 +61,22 @@ def can_edit_content(user, content) -> bool:
     return user.id == content.author_id
 
 
-def can_delete_content(user, content) -> bool:
+def can_delete_content(user, content, post) -> bool:
     if not user:
         return False
+
+    if post.public_id:
+        member = get_member(user.id, post.public_id)
+        return member and member.role == "owner"
     
     return user.id == content.author_id or user.role in ("moderator", "admin")
 
 
-def can_hide_content(user, post) -> bool:
+def can_hide_content(user, content, post) -> bool:
     if not user:
+        return False
+
+    if user.id == content.author_id:
         return False
     
     if user.role in ("moderator", "admin"):

@@ -27,7 +27,6 @@ def show_post(post_id):
         user = get_user_by_id(session.get("user_id"))
     post = get_post(post_id)
 
-    print(user.role)
     if post is None:
         abort(404)
 

@@ -58,7 +58,7 @@ def delete_comment(comment_id):
 
     return False
 
-def hide_comment(comment_id):
+def toggle_hide_comment(comment_id):
     comment = db.session.get(Comment, comment_id)
         
     if comment:

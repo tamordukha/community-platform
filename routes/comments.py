@@ -1,7 +1,7 @@
 from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort, jsonify
 from models.user import User, get_user_by_id
 from models.post import Post, get_post
-from models.comment import Comment, get_comment, add_comment, update_comment, delete_comment, hide_comment
+from models.comment import Comment, get_comment, add_comment, update_comment, delete_comment, toggle_hide_comment
 from utils.permissions import can_edit_content, can_delete_content, can_hide_content
 from config import Config
 
@@ -16,7 +16,13 @@ def create_comment(post_id):
         return redirect(url_for("auth.login"))
     
     user = get_user_by_id(session.get("user_id"))
+    post = get_post(post_id)
     content = request.form.get("content")
+
+    if not post:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Missing post"}), 404
+        abort(404)    
     
     if not content or len(content) > Config.COMMENT_MAX_LENGTH:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -70,13 +76,18 @@ def del_comment(post_id, comment_id):
         return redirect(url_for("auth.login"))
     
     user = get_user_by_id(session.get("user_id"))
+    post = get_post(post_id)
     comment = get_comment(comment_id)
 
+    if post is None:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Post not found"}), 404
+        abort(404)
     if comment is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Comment not found"}), 404
         abort(404)
-    if not can_delete_content(user, comment):
+    if not can_delete_content(user, comment, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
@@ -107,12 +118,12 @@ def hide_comment(post_id, comment_id):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Comment not found"}), 404
         abort(404)
-    if not can_hide_content(user, post):
+    if not can_hide_content(user, comment, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
 
-    hide_comment(comment_id)
+    toggle_hide_comment(comment_id)
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({"success": True})
