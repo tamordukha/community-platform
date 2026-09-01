@@ -53,6 +53,14 @@ rules
 - test_moderator_cannot_edit_reply_foreign_user
 
 - test_admin_can_edit_reply_foreign_user
+
+AJAX
+- test_create_reply_ajax_success
+- test_create_reply_ajax_too_long
+- test_create_reply_ajax_empty_content
+- test_create_reply_ajax_unauthorized
+- test_create_reply_ajax_missing_post
+- test_edit_reply_ajax_foreign_user
 '''
 
 # Create
@@ -455,3 +463,82 @@ def test_admin_can_edit_reply_foreign_user(auth_client, auth_admin_client, creat
         reply = db.session.get(Reply, 1)
         assert reply.content == "edited"
 
+
+# AJAX
+
+def test_create_reply_ajax_success(auth_client, create_comment):
+    create_comment(auth_client)
+
+    response = auth_client.post(
+        "/post/1/comment/1/reply/create",
+        data={"content": "reply content"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 200
+    assert response.json == {"success": True}
+
+
+def test_create_reply_ajax_too_long(auth_client, create_comment):
+    long_content = "a" * (Config.REPLY_MAX_LENGTH + 1)
+
+    create_comment(auth_client)
+
+    response = auth_client.post(
+        "/post/1/comment/1/reply/create",
+        data={"content": long_content},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 400
+    assert response.json == {"error": "Invalid content"}
+
+
+def test_create_reply_ajax_empty_content(auth_client, create_comment):
+    create_comment(auth_client)
+
+    response = auth_client.post(
+        "/post/1/comment/1/reply/create",
+        data={"content": ""},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 400
+    assert response.json == {"error": "Invalid content"}
+
+
+def test_create_reply_ajax_unauthorized(auth_client, client, create_comment):
+    create_comment(auth_client)
+
+    response = client.post(
+        "/post/1/comment/1/reply/create",
+        data={"content": "reply content"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 401
+    assert response.json == {"error": "Unauthorized"}
+
+
+def test_create_reply_ajax_missing_post(auth_client):
+    response = auth_client.post(
+        "/post/1/comment/1/reply/create",
+        data={"content": "reply content"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 404
+    assert response.json == {"error": "Post not found"}
+
+
+def test_edit_reply_ajax_foreign_user(auth_client, auth_foreign_client, create_reply):
+    create_reply(auth_foreign_client)
+
+    response = auth_client.post(
+        "/post/1/comment/1/reply/1/edit",
+        data={"content": "edited"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 403
+    assert response.json == {"error": "Access denied"}

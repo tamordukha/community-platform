@@ -48,6 +48,14 @@ rules
 - test_moderator_cannot_edit_comment_foreign_user
 
 - test_admin_can_edit_comment_foreign_user
+
+AJAX
+- test_create_comment_ajax_success
+- test_create_comment_ajax_too_long
+- test_create_comment_ajax_empty_content
+- test_create_comment_ajax_unauthorized
+- test_create_comment_ajax_missing_post
+- test_edit_comment_ajax_foreign_user
 '''
 
 # Create
@@ -403,3 +411,82 @@ def test_admin_can_edit_comment_foreign_user(auth_client, auth_admin_client, cre
         comment = db.session.get(Comment, 1)
         assert comment.content == "edited"
 
+
+# AJAX
+
+def test_create_comment_ajax_success(auth_client, create_post):
+    create_post(auth_client)
+
+    response = auth_client.post(
+        "/post/1/comment/create",
+        data={"content": "comment content"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 200
+    assert response.json == {"success": True}
+
+
+def test_create_comment_ajax_too_long(auth_client, create_post):
+    long_content = "a" * (Config.COMMENT_MAX_LENGTH + 1)
+
+    create_post(auth_client)
+
+    response = auth_client.post(
+        "/post/1/comment/create",
+        data={"content": long_content},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 400
+    assert response.json == {"error": "Invalid content"}
+
+
+def test_create_comment_ajax_empty_content(auth_client, create_post):
+    create_post(auth_client)
+
+    response = auth_client.post(
+        "/post/1/comment/create",
+        data={"content": ""},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 400
+    assert response.json == {"error": "Invalid content"}
+
+
+def test_create_comment_ajax_unauthorized(auth_client, client, create_post):
+    create_post(auth_client)
+
+    response = client.post(
+        "/post/1/comment/create",
+        data={"content": "comment content"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 401
+    assert response.json == {"error": "Unauthorized"}
+
+
+def test_create_comment_ajax_missing_post(auth_client):
+    response = auth_client.post(
+        "/post/1/comment/create",
+        data={"content": "comment content"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 404
+    assert response.json == {"error": "Post not found"}
+
+
+def test_edit_comment_ajax_foreign_user(auth_client, auth_foreign_client, create_comment):
+    create_comment(auth_foreign_client)
+
+    response = auth_client.post(
+        "/post/1/comment/1/edit",
+        data={"content": "edited"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 403
+    assert response.json == {"error": "Access denied"}

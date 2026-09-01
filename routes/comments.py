@@ -21,7 +21,7 @@ def create_comment(post_id):
 
     if not post:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Missing post"}), 404
+            return jsonify({"error": "Post not found"}), 404
         abort(404)    
     
     if not content or len(content) > Config.COMMENT_MAX_LENGTH:

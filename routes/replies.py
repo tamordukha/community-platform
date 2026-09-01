@@ -126,7 +126,7 @@ def del_reply(post_id, comment_id, reply_id):
 
     if post is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Postnot found"}), 404
+            return jsonify({"error": "Post not found"}), 404
         abort(404)
     if comment is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
