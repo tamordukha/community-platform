@@ -35,7 +35,7 @@ def toggle_follow(user_id):
     if follower_id == following_id:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Cannot follow yourself"}), 400
-        return redirect(url_for("profiles.profile", user_id=user_id))
+        return redirect(url_for("profiles.profile", profile_user_id=user_id))
     
     target_user = get_user_by_id(user_id)
     if target_user is None:
@@ -53,6 +53,6 @@ def toggle_follow(user_id):
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({"following": following})
     
-    return redirect(url_for("profiles.profile", user_id=user_id))
+    return redirect(url_for("profiles.profile", profile_user_id=user_id))
 
 

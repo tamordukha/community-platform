@@ -151,6 +151,7 @@ def create_comment(create_post):
     
     return _create
 
+
 # Replies
 
 @pytest.fixture
@@ -163,3 +164,12 @@ def create_reply(create_comment):
         })
     
     return _create
+
+
+# Follows
+
+@pytest.fixture
+def follow_user():
+    def _follow(client, following_id):
+        return client.post(f"/follow/{following_id}")
+    return _follow
