@@ -31,7 +31,7 @@ def toggle_repost_route():
 
     if not post:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Missing post"}), 404
+            return jsonify({"error": "Post not found"}), 404
         abort(404)
 
     if post.author_id == user_id:
@@ -56,4 +56,4 @@ def toggle_repost_route():
     if redirect_to == "post":
         return redirect(url_for("posts.show_post", post_id=post_id))
     
-    return redirect(url_for("posts.index"))
+    return redirect(url_for("posts.feed"))
