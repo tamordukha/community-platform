@@ -108,7 +108,7 @@ def can_delete_public(member, public) -> bool:
     if member.public_id != public.id:
         return False
     
-    return member.role == "onwer"
+    return member.role == "owner"
 
 
 def can_change_member_role(current_member, member, new_role) -> bool:

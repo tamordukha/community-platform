@@ -70,11 +70,11 @@ def add_public(owner_id ,name, tag, avatar=None, banner=None, bio=None):
     return public
 
 def update_public(public_id, name, tag, avatar=None, banner=None, bio=None):
-    if get_user_by_tag(tag) or get_public_by_tag(tag):
+    if get_user_by_tag(tag):
         return False
     
     existing = get_public_by_tag(tag)
-
+    
     if existing and existing.id != public_id:
         return False
 
@@ -148,7 +148,7 @@ def follow_public(user_id, public_id):
         public_id=public_id,
         role="member"
     )
-    
+
     db.session.add(member)
     db.session.commit()
 

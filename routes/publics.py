@@ -207,7 +207,7 @@ def del_public(tag):
     return redirect(url_for("posts.feed"))
 
 
-@publics_bp.route("/avatar/<int:public_id>", methods=["POST"])
+@publics_bp.route("/publics/avatar/<int:public_id>", methods=["POST"])
 def update_avatar(public_id):
     user_id = session.get("user_id")
     if not user_id:
@@ -241,7 +241,7 @@ def update_avatar(public_id):
     return redirect(url_for("publics.show_public", tag=public.tag))
 
 
-@publics_bp.route("/banner/<int:public_id>", methods=["POST"])
+@publics_bp.route("/publics/banner/<int:public_id>", methods=["POST"])
 def update_banner(public_id):
     user_id = session.get("user_id")
     if not user_id:
@@ -265,10 +265,7 @@ def update_banner(public_id):
 
     file = request.files["banner"]
 
-    if file.filename == "":
-        return redirect(url_for("publics.show_public", tag=public.tag))
-    if not validate_image(file):
-        flash("Invalid image", "error")
+    if file.filename == "" or not validate_image(file):
         return redirect(url_for("publics.show_public", tag=public.tag))
 
     ext = file.filename.rsplit('.', 1)[1].lower()

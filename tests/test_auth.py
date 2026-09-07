@@ -29,11 +29,8 @@ def test_register_success(client):
         "password": "Password1",
     })
 
-    location = response.headers.get("Location")
-    print("Redirect to:", location)
-
-    assert response.status_code == 302 # редирект на ленту
-    assert location == "/"
+    assert response.status_code == 302
+    assert response.headers.get("Location") == "/"
 
 
 def test_register_duplicate_tag(client):
