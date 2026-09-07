@@ -47,14 +47,23 @@ def add_public(owner_id ,name, tag, avatar=None, banner=None, bio=None):
     if get_user_by_tag(tag) or get_public_by_tag(tag):
         return None
 
-    public = Public(name=name, tag=tag)
-    public.avatar = avatar if avatar else None
-    public.banner = banner if banner else None
-    public.bio = bio if bio else None
-
-    owner = PublicMember(user_id=owner_id, public_id=public.id, role="owner")
-
+    public = Public(
+        name=name,
+        tag=tag,
+        bio=bio,
+        avatar=avatar,
+        banner=banner
+    )
+    
     db.session.add(public)
+    db.session.flush()
+
+    owner = PublicMember(
+        user_id=owner_id,
+        public_id=public.id,
+        role="owner"
+    )
+
     db.session.add(owner)
     db.session.commit()
 
@@ -63,7 +72,9 @@ def add_public(owner_id ,name, tag, avatar=None, banner=None, bio=None):
 def update_public(public_id, name, tag, avatar=None, banner=None, bio=None):
     if get_user_by_tag(tag) or get_public_by_tag(tag):
         return False
+    
     existing = get_public_by_tag(tag)
+
     if existing and existing.id != public_id:
         return False
 
@@ -120,17 +131,24 @@ def get_member_by_user_id(user_id):
     return member
 
 def get_member_publics(user_id):
-    publics = (db.session.query(Public)
-                .join(PublicMember)
-                .filter(PublicMember.user_id == user_id)
-                .all())
+    publics = (
+        db.session.query(Public)
+        .join(PublicMember)
+        .filter(PublicMember.user_id == user_id)
+        .all()
+    )
     return publics
 
 def is_member(user_id, public_id):
     member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
 
 def follow_public(user_id, public_id):
-    member = PublicMember(user_id=user_id, public_id=public_id, role="member")
+    member = PublicMember(
+        user_id=user_id,
+        public_id=public_id,
+        role="member"
+    )
+    
     db.session.add(member)
     db.session.commit()
 

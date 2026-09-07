@@ -20,7 +20,7 @@ def is_valid_password(password):
     return any(char in string.ascii_uppercase + string.digits for char in password)
 
 def is_valid_bio(bio):
-    if bio > Config.BIO_MAX_LENGTH:
+    if len(bio) > Config.BIO_MAX_LENGTH:
         return False
     return True
 

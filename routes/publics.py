@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, flash, abort, jsonify, send_from_directory
+from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, flash, abort, jsonify
 import os
 from models.public import (get_public_by_id, get_public_by_tag,
                            add_public, update_public, delete_public,
@@ -18,7 +18,7 @@ publics_bp = Blueprint('publics', __name__)
 
 #show_public, create_public, edit_public, delete_public, 
 
-@publics_bp.route("/public/<tag>")
+@publics_bp.route("/publics/<tag>")
 def show_public(tag):
     if session.get("user_id"):
         current_user = get_user_by_id(session.get("user_id"))
@@ -62,7 +62,7 @@ def create_public():
         if not tag:
             tag = generate_unique_tag(name)
             return render_template("publics/create.html",
-                            info="Tag generated automatically. Confirm to register.",
+                            info="Tag generated automatically. Confirm to create",
                             name=name, tag=tag, bio=bio)
         
         if not is_valid_tag(tag):
@@ -77,14 +77,12 @@ def create_public():
 
         if avatar and avatar.filename != "":
             if not validate_image(avatar):
-                flash("Invalid image", "error")
                 return render_template("publics/create.html",
                                 error="Invalid image format",
                                 name=name, tag=tag, bio=bio, avatar=avatar, banner=banner)
 
         if banner and banner.filename != "":
             if not validate_image(banner):
-                flash("Invalid image", "error")
                 return render_template("publics/create.html",
                                 error="Invalid image format",
                                 username=name, tag=tag, bio=bio, avatar=avatar, banner=banner)
@@ -154,14 +152,12 @@ def edit_public(tag):
 
         if avatar and avatar.filename != "":
             if not validate_image(avatar):
-                flash("Invalid image", "error")
                 return render_template("publics/edit.html",
                                 error="Invalid image format",
                                 name=name, tag=tag, bio=bio, current_avatar=public.avatar, current_banner=public.banner)
 
         if banner and banner.filename != "":
             if not validate_image(banner):
-                flash("Invalid image", "error")
                 return render_template("publics/edit.html",
                                 error="Invalid image format",
                                 name=name, tag=tag, bio=bio, current_avatar=public.avatar, current_banner=public.banner)
@@ -235,10 +231,7 @@ def update_avatar(public_id):
 
     file = request.files["avatar"]
 
-    if file.filename == "":
-        return redirect(url_for("publics.show_public", tag=public.tag))
-    if not validate_image(file):
-        flash("Invalid image", "error")
+    if file.filename == "" or not validate_image(file):
         return redirect(url_for("publics.show_public", tag=public.tag))
 
     ext = file.filename.rsplit('.', 1)[1].lower()
@@ -396,7 +389,7 @@ def kick_member(tag, member_id):
 
 
 @publics_bp.route("/ban/<tag>", methods=["POST"])
-def ban_user(tag):
+def ban_public(tag):
     if not session.get("user_id") or session.get("role")=="user":
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Unauthorized"}), 401

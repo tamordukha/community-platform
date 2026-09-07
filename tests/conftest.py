@@ -173,3 +173,38 @@ def follow_user():
     def _follow(client, following_id):
         return client.post(f"/follow/{following_id}")
     return _follow
+
+
+# Publics
+
+@pytest.fixture
+def create_public():
+    def _create(client, name="public name", tag="public_tag", bio=None, avatar=None, banner=None):
+        return client.post("/publics/create", data={
+            "name": name,
+            "tag": tag,
+            "bio": bio,
+            "avatar": avatar,
+            "banner": banner
+        }, content_type="multipart/form-data")
+    return _create
+
+
+@pytest.fixture
+def get_member():
+    def _get(client, public_id=1):
+        with app.app_context():
+            user_id = session.get("user_id")
+            member = db.session.query(PublicMember).filter_by(
+                user_id=user_id,
+                public_id=public_id
+            ).first()
+        return member
+    return _get
+
+
+@pytest.fixture
+def follow_public():
+    def _follow(client, public_id=1):
+        return client.post(f"/publics/follow/{public_id}")
+    return _follow
