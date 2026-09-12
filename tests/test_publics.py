@@ -61,6 +61,7 @@ banner
 followers
 - test_followers_public_success
 - test_followers_public_missing_public
+- test_followers_public_guest_can_view
 
 follow
 - test_follow_public_success
@@ -685,3 +686,95 @@ def test_banner_public_invalid(auth_client, create_public):
 
         assert public is not None
         assert public.banner is None
+
+
+# === FOLLOWERS ==============================================
+
+def test_followers_public_success(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.get("/publics/followers/public_tag")
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is not None
+
+
+def test_followers_public_missing_public(auth_client):
+    response = auth_client.get("/publics/followers/public_tag")
+
+    assert response.status_code == 404
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is None
+
+
+def test_followers_public_guest_can_view(client, auth_client, create_public):
+    create_public(auth_client)
+
+    response = client.get("/publics/followers/public_tag")
+
+    assert response.status_code == 200
+
+
+# === FOLLOW ==============================================
+
+def test_follow_public_success(auth_client, auth_foreign_client, create_public):
+    create_public(auth_foreign_client)
+
+    response = auth_client.post("/publics/follow/1")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/public_tag"
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1,public_id=1).first()
+        assert member is not None
+
+
+def test_unfollow_public_success(auth_client, auth_foreign_client, create_public):
+    create_public(auth_foreign_client)
+    
+    auth_client.post("/publics/follow/1")
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        assert member is not None
+
+    response = auth_client.post("/publics/follow/1")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/public_tag"
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        assert member is None
+
+
+def test_follow_public_unauthorized(client, auth_client, create_public):
+    create_public(auth_client)
+
+    response = client.post("/publics/follow/1")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
+
+    with app.app_context():
+        count = db.session.query(PublicMember).filter_by(public_id=1).count()
+        assert count == 1
+
+
+def test_follow_public_missing_public(auth_client):
+    response = auth_client.post("/publics/follow/1")
+
+    assert response.status_code == 404
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        member = db.session.query(PublicMember).filter_by(user_id=1,public_id=1).first()
+
+        assert public is None
+        assert member is None

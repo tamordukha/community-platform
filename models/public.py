@@ -141,12 +141,12 @@ def get_member_publics(user_id):
 
 def is_member(user_id, public_id):
     member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
+    return member
 
 def follow_public(user_id, public_id):
     member = PublicMember(
         user_id=user_id,
-        public_id=public_id,
-        role="member"
+        public_id=public_id
     )
 
     db.session.add(member)
