@@ -304,10 +304,10 @@ def toggle_follow(public_id):
 
     if is_member(user_id, public_id):
         unfollow_public(user_id, public_id)
-        following = False
+        following = is_member(user_id, public_id)
     else:
         follow_public(user_id, public_id)
-        following = True
+        following = is_member(user_id, public_id)
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({"following": following})

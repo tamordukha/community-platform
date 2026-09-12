@@ -154,7 +154,9 @@ def follow_public(user_id, public_id):
 
 def unfollow_public(user_id, public_id):
     member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
-    if member:
+    owners_count = db.session.query(PublicMember).filter_by(role="owner", public_id=public_id).count()
+
+    if member and not (member.role=="owner" and owners_count<=1):
         db.session.delete(member)
         db.session.commit()
 

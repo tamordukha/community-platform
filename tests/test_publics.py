@@ -489,7 +489,7 @@ def test_delete_public_missing_public(auth_client):
         assert public is None
 
 
-# avatar and banner
+# === AVATAR ==============================================
 
 def test_avatar_public_success(auth_client, create_public):
     create_public(auth_client)
@@ -509,6 +509,87 @@ def test_avatar_public_success(auth_client, create_public):
         assert public.avatar is not None
 
 
+def test_avatar_public_unauthorized(client, auth_client, create_public):
+    create_public(auth_client)
+
+    with open("tests/test_images/test_image.jpg", "rb") as f:
+        avatar = (f, "test_avatar.jpg")
+
+        response = client.post("/publics/avatar/1", data={"avatar": avatar})
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+
+        assert public is not None
+        assert public.avatar is None
+
+
+def test_avatar_public_missing_public(auth_client):
+    with open("tests/test_images/test_image.jpg", "rb") as f:
+        avatar = (f, "test_avatar.jpg")
+
+        response = auth_client.post("/publics/avatar/1", data={"avatar": avatar})
+
+    assert response.status_code == 404
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is None
+
+
+def test_avatar_public_missing_member(auth_foreign_client, auth_client, create_public):
+    create_public(auth_client)
+
+    with open("tests/test_images/test_image.jpg", "rb") as f:
+        avatar = (f, "test_avatar.jpg")
+
+        response = auth_foreign_client.post("/publics/avatar/1", data={"avatar": avatar})
+
+    assert response.status_code == 404
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+
+        assert public is not None
+        assert public.avatar is None
+
+
+def test_avatar_public_missing_avatar(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post("/publics/avatar/1", data={"avatar": None})
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/public_tag"
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+
+        assert public is not None
+        assert public.avatar is None
+
+
+def test_avatar_public_invalid(auth_client, create_public):
+    avatar = io.BytesIO(b"fake image data"), "avatar.jpg"
+
+    create_public(auth_client)
+
+    response = auth_client.post("/publics/avatar/1", data={"avatar": avatar})
+
+    assert response.status_code == 302
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+
+        assert public is not None
+        assert public.avatar is None
+
+
+# === BANNER ==============================================
+
 def test_banner_public_success(auth_client, create_public):
     create_public(auth_client)
 
@@ -527,20 +608,67 @@ def test_banner_public_success(auth_client, create_public):
         assert public.banner is not None
 
 
-def test_avatar_public_invalid(auth_client, create_public):
-    avatar = io.BytesIO(b"fake image data"), "avatar.jpg"
-
+def test_banner_public_unauthorized(client, auth_client, create_public):
     create_public(auth_client)
 
-    response = auth_client.post("/publics/avatar/1", data={"avatar": avatar})
+    with open("tests/test_images/test_image.jpg", "rb") as f:
+        banner = (f, "test_banner.jpg")
+
+        response = client.post("/publics/banner/1", data={"banner": banner})
 
     assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
     
     with app.app_context():
         public = db.session.get(Public, 1)
 
         assert public is not None
-        assert public.avatar is None
+        assert public.banner is None
+
+
+def test_baanner_public_missing_public(auth_client):
+    with open("tests/test_images/test_image.jpg", "rb") as f:
+        banner = (f, "test_banner.jpg")
+
+        response = auth_client.post("/publics/banner/1", data={"banner": banner})
+
+    assert response.status_code == 404
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is None
+
+
+def test_banner_public_missing_member(auth_foreign_client, auth_client, create_public):
+    create_public(auth_client)
+
+    with open("tests/test_images/test_image.jpg", "rb") as f:
+        banner = (f, "test_banner.jpg")
+
+        response = auth_foreign_client.post("/publics/banner/1", data={"banner": banner})
+
+    assert response.status_code == 404
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+
+        assert public is not None
+        assert public.banner is None
+
+
+def test_banner_public_missing_banner(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post("/publics/banner/1", data={"banner": None})
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/public_tag"
+    
+    with app.app_context():
+        public = db.session.get(Public, 1)
+
+        assert public is not None
+        assert public.banner is None
 
 
 def test_banner_public_invalid(auth_client, create_public):
