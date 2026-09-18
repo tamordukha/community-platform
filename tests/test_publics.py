@@ -65,26 +65,24 @@ followers
 
 follow
 - test_follow_public_success
-- test_unfollow_public_success
 - test_follow_public_unauthorized
 - test_follow_public_missing_public
+- test_unfollow_public_success
+- test_unfollow_public_last_owner
 
 roles
 - test_change_member_role_success
 - test_change_member_role_unauthorized
-- test_change_member_role_missing_post
 - test_change_member_role_missing_member
 
 kick
 - test_kick_member_success
 - test_kick_member_unauthorized
-- test_kick_member_missing_public
 - test_kick_member_missing_member
 
 ban
 - test_ban_public_success
 - test_ban_public_unauthorized
-- test_ban_public_missing_public
 
 
 public post (create)
@@ -146,6 +144,7 @@ Permissions (kick)
 - test_admin_cannot_kick_admin
 - test_owner_can_kick_admin
 - test_member_cannot_kick
+- test_kick_member_not_in_public
 
 Permissions (post)
 - test_owner_can_create_post
@@ -778,3 +777,120 @@ def test_follow_public_missing_public(auth_client):
 
         assert public is None
         assert member is None
+
+
+
+# === ROLES ==============================================
+
+def test_change_member_role_success(auth_client, auth_foreign_client, create_public):
+    create_public(auth_client)
+
+    auth_foreign_client.post("/publics/follow/1")
+
+    response = auth_client.post(
+        "/publics/public_tag/members/2/role",
+        data={"new_role": "admin"}
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/followers/public_tag"
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+
+        assert member is not None
+        assert member.role == "admin"
+
+
+def test_change_member_role_unauthorized(client, auth_foreign_client, create_public):
+    create_public(auth_foreign_client)
+
+    response = client.post(
+        "/publics/public_tag/members/2/role",
+        data={"new_role": "admin"}
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is not None
+        assert member.role == "owner"
+
+
+def test_change_member_role_missing_member(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post(
+        "/publics/public_tag/members/2/role",
+        data={"new_role": "admin"}
+    )
+
+    assert response.status_code == 404
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is None
+
+
+# === KICK ==============================================
+
+def test_kick_member_success(auth_client, auth_foreign_client, create_public):
+    create_public(auth_client)
+
+    auth_foreign_client.post("/publics/follow/1")
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is not None
+
+    response = auth_client.post("/publics/public_tag/members/2/kick")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/followers/public_tag"
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is None
+
+
+def test_kick_member_unauthorized(client, auth_foreign_client, create_public):
+    create_public(auth_foreign_client)
+
+    response = client.post("/publics/public_tag/members/2/kick")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is not None
+
+
+def test_kick_member_missing_member(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post("/publics/public_tag/members/2/kick")
+
+    assert response.status_code == 404
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is None
+
+
+
+# === BAN ==============================================
+
+def test_ban_public_success():
+
+
+
+def test_ban_public_unauthorized():
+
+
+
+def test_ban_public_missing_public():
+
+
