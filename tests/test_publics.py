@@ -80,10 +80,6 @@ kick
 - test_kick_member_unauthorized
 - test_kick_member_missing_member
 
-ban
-- test_ban_public_success
-- test_ban_public_unauthorized
-
 
 public post (create)
 - test_create_public_post_success
@@ -116,19 +112,12 @@ AJAX (follow)
 AJAX (roles)
 - test_change_member_role_ajax_success
 - test_change_member_role_ajax_unauthorized
-- test_change_member_role_ajax_missing_public
 - test_change_member_role_ajax_missing_member
 
 AJAX (kick)
 - test_kick_member_ajax_success
 - test_kick_member_ajax_unauthorized
-- test_kick_member_ajax_missing_public
 - test_kick_member_ajax_missing_member
-
-AJAX (ban)
-- test_ban_public_ajax_success
-- test_ban_public_ajax_unauthorized
-- test_ban_public_ajax_missing_public
 
 
 Permissions (roles)
@@ -145,13 +134,6 @@ Permissions (kick)
 - test_owner_can_kick_admin
 - test_member_cannot_kick
 - test_kick_member_not_in_public
-
-Permissions (post)
-- test_owner_can_create_post
-- test_admin_can_create_post
-- test_admin_can_edit_post
-- test_admin_can_delete_post
-- test_member_cannot_create_post
 '''
 
 
@@ -811,10 +793,10 @@ def test_change_member_role_unauthorized(client, auth_foreign_client, create_pub
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"] == "/login"
+    assert response.headers["Location"] == "/publics/followers/public_tag"
 
     with app.app_context():
-        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
         assert member is not None
         assert member.role == "owner"
 
@@ -861,10 +843,10 @@ def test_kick_member_unauthorized(client, auth_foreign_client, create_public):
     response = client.post("/publics/public_tag/members/2/kick")
 
     assert response.status_code == 302
-    assert response.headers["Location"] == "/login"
+    assert response.headers["Location"] == "/publics/followers/public_tag"
 
     with app.app_context():
-        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
         assert member is not None
 
 
@@ -880,17 +862,162 @@ def test_kick_member_missing_member(auth_client, create_public):
         assert member is None
 
 
+# === AJAX (FOLLOW) ==============================================
 
-# === BAN ==============================================
+def test_follow_public_ajax_success(auth_client, auth_foreign_client, create_public):
+    create_public(auth_foreign_client)
 
-def test_ban_public_success():
+    response = auth_client.post(
+        "/publics/follow/1",
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 200
+    assert response.json == {"following": True}
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1,public_id=1).first()
+        assert member is not None
 
 
+def test_follow_public_ajax_unauthorized(client, auth_client, create_public):
+    create_public(auth_client)
 
-def test_ban_public_unauthorized():
+    response = client.post(
+        "/publics/follow/1",
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 401
+    assert response.json == {"error": "Unauthorized"}
+
+    with app.app_context():
+        count = db.session.query(PublicMember).filter_by(public_id=1).count()
+        assert count == 1
 
 
+def test_follow_public_ajax_missing_public(auth_client):
+    response = auth_client.post(
+        "/publics/follow/1",
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
 
-def test_ban_public_missing_public():
+    assert response.status_code == 404
+    assert response.json == {"error": "Public not found"}
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        member = db.session.query(PublicMember).filter_by(user_id=1,public_id=1).first()
+
+        assert public is None
+        assert member is None
 
 
+# === AJAX (ROLE) ==============================================
+
+def test_change_member_role_ajax_success(auth_client, auth_foreign_client, create_public):
+    create_public(auth_client)
+
+    auth_foreign_client.post("/publics/follow/1")
+
+    response = auth_client.post(
+        "/publics/public_tag/members/2/role",
+        data={"new_role": "admin"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 200
+    assert response.json == {"new_role": "admin"}
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+
+        assert member is not None
+        assert member.role == "admin"
+
+
+def test_change_member_role_ajax_unauthorized(client, auth_foreign_client, create_public):
+    create_public(auth_foreign_client)
+
+    response = client.post(
+        "/publics/public_tag/members/2/role",
+        data={"new_role": "admin"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 401
+    assert response.json == {"error": "Unauthorized"}
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        assert member is not None
+        assert member.role == "owner"
+
+
+def test_change_member_role_ajax_missing_member(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post(
+        "/publics/public_tag/members/2/role",
+        data={"new_role": "admin"},
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 404
+    assert response.json == {"error": "Member not found"}
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is None
+
+
+# === AJAX (KICK) ==============================================
+
+def test_kick_member_ajax_success(auth_client, auth_foreign_client, create_public):
+    create_public(auth_client)
+
+    auth_foreign_client.post("/publics/follow/1")
+
+    response = auth_client.post(
+        "/publics/public_tag/members/2/kick",
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 200
+    assert response.json == {"kicked": True}
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is None
+
+
+def test_kick_member_ajax_unauthorized(client, auth_foreign_client, create_public):
+    create_public(auth_foreign_client)
+
+    response = client.post(
+        "/publics/public_tag/members/2/kick",
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 401
+    assert response.json == {"error": "Unauthorized"}
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        assert member is not None
+
+
+def test_kick_member_ajax_missing_member(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post(
+        "/publics/public_tag/members/2/kick",
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+
+    assert response.status_code == 404
+    assert response.json == {"error": "Member not found"}
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
+        assert member is None

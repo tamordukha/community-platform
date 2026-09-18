@@ -140,8 +140,7 @@ def get_member_publics(user_id):
     return publics
 
 def is_member(user_id, public_id):
-    member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
-    return member
+    return db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first() is not None
 
 def follow_public(user_id, public_id):
     member = PublicMember(

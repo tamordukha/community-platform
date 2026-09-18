@@ -305,6 +305,7 @@ def toggle_follow(public_id):
     if is_member(user_id, public_id):
         unfollow_public(user_id, public_id)
         following = is_member(user_id, public_id)
+        print(following)
     else:
         follow_public(user_id, public_id)
         following = is_member(user_id, public_id)
