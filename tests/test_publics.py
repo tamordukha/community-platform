@@ -1599,3 +1599,177 @@ def test_member_cannot_promote(auth_client, auth_foreign_client, create_public, 
     with app.app_context():
         member = db.session.get(PublicMember, 2)
         assert member.role == "member"
+
+
+# === PERMISSIONS (POSTS) ==============================================
+
+# Owner
+
+def test_owner_can_create_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+
+    response = create_public_post(auth_client)
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/public_tag"
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+
+def test_owner_can_edit_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content == "edited"
+
+
+def test_owner_can_delete_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+    response = auth_client.post("/post/delete/1")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+# Admin
+
+def test_admin_can_create_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = create_public_post(auth_client)
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/public_tag"
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+
+def test_admin_can_edit_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content == "edited"
+
+
+def test_admin_can_delete_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = auth_client.post("/post/delete/1")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+# Member
+
+def test_member_cannot_create_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "member"
+        db.session.commit()
+
+    response = create_public_post(auth_client)
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+def test_member_cannot_edit_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "member"
+        db.session.commit()
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content != "edited"
+
+
+def test_member_cannot_delete_post(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "member"
+        db.session.commit()
+
+    response = auth_client.post("/post/delete/1")
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
