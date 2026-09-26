@@ -139,6 +139,9 @@ def get_member_publics(user_id):
     )
     return publics
 
+def get_owners_count(public_id):
+    return db.session.query(PublicMember).filter_by(public_id=public_id, role="owner").count()
+
 def is_member(user_id, public_id):
     return db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first() is not None
 

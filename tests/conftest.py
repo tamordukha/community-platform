@@ -138,6 +138,15 @@ def create_post():
     return _create
 
 
+@pytest.fixture
+def create_public_post():
+    def _create(client, content="post content", tag="public_tag"):
+        return client.post(f"/public/{tag}/post/create", data={
+            "content": content
+        })
+    return _create
+
+
 # Comments
 
 @pytest.fixture
@@ -208,3 +217,13 @@ def follow_public():
     def _follow(client, public_id=1):
         return client.post(f"/publics/follow/{public_id}")
     return _follow
+
+
+@pytest.fixture
+def change_member_role():
+    def _change(client, member_id, new_role):
+        return client.post(
+            f"/publics/public_tag/members/{member_id}/role",
+            data={"new_role": new_role}
+        )
+    return _change

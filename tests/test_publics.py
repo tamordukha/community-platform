@@ -96,12 +96,14 @@ public post (edit)
 - test_edit_public_post_missing_post
 - test_edit_public_post_too_long
 - test_edit_public_post_empty_content
+- test_edit_public_post_foreign_user
 
 public post (delete)
 - test_delete_public_post_success
 - test_delete_public_post_unauthorized
 - test_delete_public_post_missing_member
 - test_delete_public_post_missing_post
+- test_delete_public_post_foreign_user
 
 
 AJAX (follow)
@@ -120,7 +122,7 @@ AJAX (kick)
 - test_kick_member_ajax_missing_member
 
 
-Permissions (roles)
+Permissions (public)
 - test_owner_can_delete_public
 - test_owner_can_edit_public
 - test_admin_cannot_delete_public
@@ -128,12 +130,42 @@ Permissions (roles)
 - test_member_cannot_delete_public
 - test_member_cannot_edit_public
 
+
+Permissions (roles)
+- test_owner_can_promote_member_to_owner
+- test_owner_cannot_demote_owner_to_member
+- test_owner_can_demote_admin_to_member
+- test_owner_can_demote_self_with_other_owners
+- test_owner_cannot_demote_self_last
+
+- test_admin_can_promote_member_to_admin
+- test_admin_cannot_promote_member_to_owner
+- test_admin_cannot_demote_admin_to_member
+- test_admin_can_demote_self
+
+- test_member_cannot_promote
+
+
+Permissions (posts)
+- test_owner_can_create_post
+- test_owner_can_edit_post
+- test_owner_can_delete_post
+
+- test_admin_can_create_post
+- test_admin_can_edit_post
+- test_admin_can_delete_post
+
+- test_member_cannot_create_post
+- test_member_cannot_edit_post
+- test_member_cannot_delete_post
+
+
 Permissions (kick)
 - test_admin_can_kick_member
 - test_admin_cannot_kick_admin
 - test_owner_can_kick_admin
 - test_member_cannot_kick
-- test_kick_member_not_in_public
+- test_non_member_cannot_kick
 '''
 
 
@@ -862,6 +894,264 @@ def test_kick_member_missing_member(auth_client, create_public):
         assert member is None
 
 
+# === PUBLIC POST (CREATE) ==============================================
+
+def test_create_public_post_success(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+
+    response = create_public_post(auth_client)
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/publics/public_tag"
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+
+def test_create_public_post_unauthorized(client, auth_client, create_public, create_public_post):
+    create_public(auth_client)
+
+    response = create_public_post(client)
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+def test_create_public_post_missing_public(auth_client, create_public_post):
+    response = create_public_post(auth_client)
+
+    assert response.status_code == 404
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+def test_create_public_post_missing_member(auth_client, auth_foreign_client, create_public, create_public_post):
+    create_public(auth_foreign_client)
+
+    response = create_public_post(auth_client)
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+def test_create_public_post_too_long(auth_client, create_public, create_public_post):
+    long_content = "a" * (Config.POST_MAX_LENGTH + 1)
+
+    create_public(auth_client)
+
+    response = create_public_post(auth_client, content=long_content)
+
+    assert response.status_code == 200
+    assert f"Max {Config.POST_MAX_LENGTH} characters".encode() in response.data
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+def test_create_public_post_empty_content(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+
+    response = create_public_post(auth_client, content="")
+
+    assert response.status_code == 200
+    assert b"Content is required" in response.data
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+# === PUBLIC POST (EDIT) ==============================================
+
+def test_edit_public_post_success(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content == "edited"
+
+
+def test_edit_public_post_unauthorized(client, auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    response = client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content != "edited"
+
+
+def test_edit_public_post_missing_member(auth_client, auth_foreign_client, create_public, create_public_post):
+    create_public(auth_foreign_client)
+    create_public_post(auth_foreign_client)
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content != "edited"
+
+
+def test_edit_public_post_missing_post(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 404
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+def test_edit_public_post_too_long(auth_client, create_public, create_public_post):
+    long_content = "a" * (Config.POST_MAX_LENGTH + 1)
+
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": long_content}
+    )
+
+    assert response.status_code == 200
+    assert f"Max {Config.POST_MAX_LENGTH} characters".encode() in response.data
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content != "edited"
+
+
+def test_edit_public_post_empty_content(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": ""}
+    )
+
+    assert response.status_code == 200
+    assert b"Content is required" in response.data
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content != "edited"
+
+
+
+def test_edit_public_post_foreign_user(auth_client, auth_foreign_client, create_public, create_public_post, follow_public):
+    create_public(auth_foreign_client)
+    create_public_post(auth_foreign_client)
+    follow_public(auth_client)
+
+    response = auth_client.post(
+        "/post/edit/1",
+        data={"content": "edited"}
+    )
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+        assert post.content != "edited"
+
+
+# === PUBLIC POST (DELETE) ==============================================
+
+def test_delete_public_post_success(auth_client, create_public, create_public_post):
+    create_public(auth_client)
+    create_public_post(auth_client)
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+    response = auth_client.post("/post/delete/1")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is None
+
+
+def test_delete_public_post_unauthorized(client, auth_foreign_client, create_public, create_public_post):
+    create_public(auth_foreign_client)
+    create_public_post(auth_foreign_client)
+
+    response = client.post("/post/delete/1")
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/login"
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+
+def test_delete_public_post_missing_member(auth_client, auth_foreign_client, create_public, create_public_post):
+    create_public(auth_foreign_client)
+    create_public_post(auth_foreign_client)
+
+    response = auth_client.post("/post/delete/1")
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        post = db.session.query(Post).filter_by(public_id=1).first()
+        assert post is not None
+
+
+def test_delete_public_post_missing_post(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post("/post/delete/1")
+
+    assert response.status_code == 404
+
+
 # === AJAX (FOLLOW) ==============================================
 
 def test_follow_public_ajax_success(auth_client, auth_foreign_client, create_public):
@@ -1021,3 +1311,291 @@ def test_kick_member_ajax_missing_member(auth_client, create_public):
     with app.app_context():
         member = db.session.query(PublicMember).filter_by(user_id=2, public_id=1).first()
         assert member is None
+
+
+# === PERMISSIONS (PUBLIC) ==============================================
+
+def test_owner_can_delete_public(auth_client, create_public):
+    create_public(auth_client)
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is not None
+
+    response = auth_client.post("/publics/delete/public_tag")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is None
+
+
+def test_owner_can_edit_public(auth_client, create_public):
+    create_public(auth_client)
+
+    response = auth_client.post(
+        "/publics/edit/public_tag",
+        data={
+            "tag": "edited_tag",
+            "name": "edited name",
+            "bio": "edited bio"
+            }
+        )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+
+        assert public is not None
+        assert public.tag == "edited_tag"
+        assert public.name == "edited name"
+        assert public.bio == "edited bio"
+
+
+def test_admin_cannot_delete_public(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_foreign_client)
+    follow_public(auth_client)
+    change_member_role(auth_foreign_client, 2, "admin")
+
+    response = auth_client.post("/publics/delete/public_tag")
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is not None
+
+
+def test_admin_can_edit_public(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_foreign_client)
+    follow_public(auth_client)
+    change_member_role(auth_foreign_client, 2, "admin")
+
+    response = auth_client.post(
+        "/publics/edit/public_tag",
+        data={
+            "tag": "edited_tag",
+            "name": "edited name",
+            "bio": "edited bio"
+        }
+    )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is not None
+        assert public.tag == "edited_tag"
+
+
+def test_member_cannot_delete_public(auth_client, auth_foreign_client, create_public, follow_public):
+    create_public(auth_foreign_client)
+    follow_public(auth_client)
+
+    response = auth_client.post("/publics/delete/public_tag")
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is not None
+
+
+def test_member_cannot_edit_public(auth_client, auth_foreign_client, create_public, follow_public):
+    create_public(auth_foreign_client)
+    follow_public(auth_client)
+
+    response = auth_client.post(
+        "/publics/edit/public_tag",
+        data={
+            "tag": "edited_tag",
+            "name": "edited name",
+            "bio": "edited bio"
+        }
+    )
+
+    assert response.status_code == 403
+
+    with app.app_context():
+        public = db.session.get(Public, 1)
+        assert public is not None
+        assert public.tag != "edited_tag"
+
+
+# === PERMISSIONS (ROLE) ==============================================
+
+# Owner
+
+def test_owner_can_promote_member_to_owner(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+
+    response = change_member_role(auth_client, 2, "owner")
+
+    assert response.status_code == 302
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is not None
+        assert member.role == "owner"
+
+
+def test_owner_cannot_demote_owner_to_member(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+    change_member_role(auth_client, 2, "owner")
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is not None
+        assert member.role == "owner"
+
+    response = change_member_role(auth_client, 2, "member")
+
+    assert response.status_code == 403
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member.role == "owner"
+
+
+def test_owner_can_demote_admin_to_member(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+    change_member_role(auth_client, 2, "admin")
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is not None
+        assert member.role == "admin"
+
+    response = change_member_role(auth_client, 2, "member")
+
+    assert response.status_code == 302
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member.role == "member"
+
+
+def test_owner_can_demote_self_with_other_owners(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+    change_member_role(auth_client, 2, "owner")
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is not None
+        assert member.role == "owner"
+
+    response = change_member_role(auth_client, 1, "member")
+
+    assert response.status_code == 302
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 1)
+        assert member.role == "member"
+
+
+def test_owner_cannot_demote_self_last(auth_client, create_public, change_member_role):
+    create_public(auth_client)
+
+    response = change_member_role(auth_client, 1, "member")
+
+    assert response.status_code == 403
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 1)
+        assert member.role == "owner"
+
+
+
+# Admin
+
+def test_admin_can_promote_member_to_admin(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = change_member_role(auth_client, 2, "admin")
+
+    assert response.status_code == 302
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member.role == "admin"
+
+
+def test_admin_cannot_promote_member_to_owner(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = change_member_role(auth_client, 2, "owner")
+
+    assert response.status_code == 403
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member.role == "member"
+
+
+def test_admin_cannot_demote_admin_to_member(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+    change_member_role(auth_client, 2, "admin")
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = change_member_role(auth_client, 2, "member")
+
+    assert response.status_code == 403
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member.role == "admin"
+
+
+def test_admin_can_demote_self(auth_client, create_public, follow_public, change_member_role):
+    create_public(auth_client)
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = change_member_role(auth_client, 1, "member")
+
+    assert response.status_code == 302
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 1)
+        assert member.role == "member"
+
+
+# Member
+
+def test_member_cannot_promote(auth_client, auth_foreign_client, create_public, follow_public, change_member_role):
+    create_public(auth_foreign_client)
+    follow_public(auth_client)
+    
+    response = change_member_role(auth_client, 2, "admin")
+    
+    assert response.status_code == 403
+    
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member.role == "member"

@@ -111,17 +111,29 @@ def can_delete_public(member, public) -> bool:
     return member.role == "owner"
 
 
-def can_change_member_role(current_member, member, new_role) -> bool:
+def can_change_member_role(current_member, member, new_role, owners_count) -> bool:
     if not current_member or not member:
         return False
     
-    if current_member.id == member.id or member.role == new_role:
+    if member.role == new_role:
         return False
-    
+
     if current_member.role == "admin" and member.role == "member" and new_role == "admin":
         return True
+
+    if member.role == "owner" and owners_count <= 1:
+        return False
     
     if current_member.role == "owner" and member.role != "owner":
+        return True
+
+    if current_member.id == member.id:
+        if member.role == "member" and new_role in ("admin", "owner"):
+            return False
+
+        if member.role == "admin" and new_role == "owner":
+            return False
+
         return True
     
     return False

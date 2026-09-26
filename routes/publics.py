@@ -6,7 +6,7 @@ from models.public import (get_public_by_id, get_public_by_tag,
                            get_member, get_member_by_id,
                            get_public_members, update_member_role,
                            is_member, follow_public, unfollow_public,
-                           toggle_ban_public)
+                           toggle_ban_public, get_owners_count)
 from models.user import get_user_by_id
 from models.post import get_posts
 from utils.permissions import can_edit_public, can_delete_public, can_change_member_role, can_kick_member
@@ -126,7 +126,7 @@ def edit_public(tag):
         return abort(404)
     
     if not can_edit_public(member, public):
-        return abort(404)
+        return abort(403)
 
     if request.method == "POST":
         name = request.form.get("name") if "name" in request.form else public.name
@@ -198,7 +198,7 @@ def del_public(tag):
         return abort(404)
     
     if not can_delete_public(member, public):
-        return abort(404)
+        return abort(403)
 
     deleted = delete_public(public.id)
     if not deleted:
@@ -338,8 +338,9 @@ def change_role(tag, member_id):
         return abort(404)
 
     new_role = request.form.get("new_role")
+    owners_count = get_owners_count(public.id)
 
-    if can_change_member_role(current_member, member, new_role):
+    if can_change_member_role(current_member, member, new_role, owners_count):
         update_member_role(member, new_role)
     else:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":

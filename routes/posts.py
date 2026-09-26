@@ -70,14 +70,13 @@ def create_public_post(tag):
         return redirect(url_for("auth.login"))
     
     public = get_public_by_tag(tag)
+
     if not public:
         abort(404)
 
     member = get_member(user_id, public.id)
-    if not member:
-        return abort(404)
 
-    if not can_edit_public(member, public):
+    if not member or not can_edit_public(member, public):
         return abort(403)
 
     if request.method == "POST":
@@ -98,6 +97,7 @@ def edit_post(post_id):
         return redirect(url_for("auth.login"))
     user = get_user_by_id(session.get("user_id"))
     post = get_post(post_id)
+    
     if post is None:
         abort(404)
 
@@ -123,11 +123,11 @@ def del_post(post_id):
     user = get_user_by_id(session.get("user_id"))
     post = get_post(post_id)
 
-    if not can_delete_post(user, post):
-        abort(403)
-
     if post is None:
         abort(404)
+
+    if not can_delete_post(user, post):
+        abort(403)
 
     delete_post(post_id)
     return redirect(url_for("posts.feed"))
