@@ -220,6 +220,13 @@ def follow_public():
 
 
 @pytest.fixture
+def kick_member():
+    def _kick(client, tag="public_tag", member_id=2):
+        return client.post(f"/publics/{tag}/members/{member_id}/kick")
+    return _kick
+
+
+@pytest.fixture
 def change_member_role():
     def _change(client, member_id, new_role):
         return client.post(

@@ -1773,3 +1773,80 @@ def test_member_cannot_delete_post(auth_client, create_public, create_public_pos
     with app.app_context():
         post = db.session.query(Post).filter_by(public_id=1).first()
         assert post is not None
+
+
+# === PERMISSIONS (KICK) ==============================================
+
+def test_admin_can_kick_member(auth_client, auth_foreign_client, create_public, follow_public, kick_member):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is not None
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = kick_member(auth_client)
+    assert response.status_code == 302
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is None
+
+
+def test_admin_cannot_kick_admin(auth_client, auth_foreign_client, create_public, follow_public, change_member_role, kick_member):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+    change_member_role(auth_client, 2, "admin")
+
+    with app.app_context():
+        member = db.session.query(PublicMember).filter_by(user_id=1, public_id=1).first()
+        member.role = "admin"
+        db.session.commit()
+
+    response = kick_member(auth_client)
+    assert response.status_code == 403
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is not None
+
+
+def test_owner_can_kick_admin(auth_client, auth_foreign_client, create_public, follow_public, change_member_role, kick_member):
+    create_public(auth_client)
+    follow_public(auth_foreign_client)
+    change_member_role(auth_client, 2, "admin")
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is not None
+
+    response = kick_member(auth_client)
+    assert response.status_code == 302
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 2)
+        assert member is None
+
+
+def test_member_cannot_kick(auth_client, auth_foreign_client, create_public, follow_public, kick_member):
+    create_public(auth_foreign_client)
+    follow_public(auth_client)
+
+    response = kick_member(auth_client, member_id=1)
+    assert response.status_code == 403
+
+    with app.app_context():
+        member = db.session.get(PublicMember, 1)
+        assert member is not None
+
+
+def test_non_member_cannot_kick(auth_client, create_public, kick_member):
+    create_public(auth_client)
+
+    response = kick_member(auth_client)
+    assert response.status_code == 404
