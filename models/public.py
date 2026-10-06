@@ -142,26 +142,6 @@ def get_member_publics(user_id):
 def get_owners_count(public_id):
     return db.session.query(PublicMember).filter_by(public_id=public_id, role="owner").count()
 
-def is_member(user_id, public_id):
-    return db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first() is not None
-
-def follow_public(user_id, public_id):
-    member = PublicMember(
-        user_id=user_id,
-        public_id=public_id
-    )
-
-    db.session.add(member)
-    db.session.commit()
-
-def unfollow_public(user_id, public_id):
-    member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
-    owners_count = db.session.query(PublicMember).filter_by(role="owner", public_id=public_id).count()
-
-    if member and not (member.role=="owner" and owners_count<=1):
-        db.session.delete(member)
-        db.session.commit()
-
 def update_member_role(member, role):
     member.role = role
     db.session.commit()

@@ -1,17 +1,27 @@
 from models.public import get_member
+from models.block import is_blocked
 
 # Posts
 def can_view_post(user, post) -> bool:
-    if post.is_public:
-        return True
+    if user:
+        if user.role in ("moderator", "admin"):
+            return True
     
-    if post.public_id:
+        if post.public_id:
+            if is_blocked("public", post.public_id, "user", user.id):
+                return False
+
+        if post.author_id:
+            if is_blocked("user", post.author_id, "user", user.id):
+                return False
+    
+    if post.is_public:
         return True
     
     if not user:
         return False
-    
-    return user.id == post.author_id or user.role in ("moderator", "admin")
+
+    return user.id == post.author_id
 
 
 def can_edit_post(user, post) -> bool:
@@ -42,7 +52,26 @@ def can_delete_post(user, post) -> bool:
     return user.id == post.author_id
 
 
-# Comments
+def can_interact_with_post(user, post) -> bool:
+    if not user:
+        return False
+    
+    if post.author_id:
+        if is_blocked("user", user.id, "user", post.author_id):
+            return False
+        if is_blocked("user", post.author_id, "user", user.id):
+            return False
+    
+    if post.public_id:
+        if is_blocked("user", user.id, "public", post.public_id):
+            return False
+        if is_blocked("public", post.public_id, "user", user.id):
+            return False
+    
+    return True
+    
+
+# Comments and Replies
 
 def can_view_content(user, post, content) -> bool:
     if not content.is_hidden:
@@ -90,6 +119,16 @@ def can_hide_content(user, content, post) -> bool:
 
 
 # Public
+
+def can_view_public(current_user, public) -> bool:
+    if not current_user or not public:
+        return False
+
+    if current_user.role in ("moderator", "admin"):
+        return True
+    
+    return is_blocked("public", public.id, "user", current_user.id)
+
 
 def can_edit_public(member, public) -> bool:
     if not member:
@@ -155,7 +194,33 @@ def can_kick_member(current_member, member) -> bool:
     return False
 
 
+def can_interact_with_public(current_user, public) -> bool:
+    if not current_user or not public:
+        return False
+    
+    if is_blocked("user", current_user.id, "public", public.id):
+        return False
+    if is_blocked("public", public.id, "user", current_user.id):
+        return False
+
+    return True
+
+
+
 # Profile
+
+def can_view_profile(current_user, profile_user) -> bool:
+    if not current_user or not profile_user:
+        return False
+
+    if current_user.id == profile_user.id:
+        return True
+
+    if current_user.role in ("moderator", "admin"):
+        return True
+    
+    return is_blocked("user", profile_user.id, "user", current_user.id)
+
 
 def can_change_role(current_user, profile_user, new_role) -> bool:
     if not current_user or not profile_user:
@@ -189,6 +254,21 @@ def can_modify_role(current_user, profile_user) -> bool:
     return False
 
 
+def can_interact_with_profile(current_user, profile_user) -> bool:
+    if not current_user or not profile_user:
+        return False
+
+    if current_user.id == profile_user.id:
+        return True
+    
+    if is_blocked("user", current_user.id, "user", profile_user.id):
+        return False
+    if is_blocked("user", profile_user.id, "user", current_user.id):
+        return False
+
+    return True
+
+
 # Block
 
 def can_block_user(blocker, blocked) -> bool:
@@ -205,3 +285,22 @@ def can_block_user(blocker, blocked) -> bool:
         return True
     
     return False
+
+
+def can_block_member(current_member, user, member=None) -> bool:
+    if not current_member or not user:
+        return False
+    
+    if current_member.user_id == user.id:
+        return False
+
+    if current_member.role == "member":
+        return False
+
+    if member:
+        if member.role == "owner":
+            return False
+        if current_member.role == "admin" and member.role == "admin":
+            return False
+    
+    return True

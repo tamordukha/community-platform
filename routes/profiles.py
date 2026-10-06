@@ -2,7 +2,8 @@ from flask import Flask, Blueprint, current_app, render_template, request, redir
 from models.user import get_user_by_id, update_user_avatar, update_user_banner, update_user_role, toggle_ban_user
 from models.post import get_posts
 from models.repost import get_reposts_for_user
-from utils.permissions import can_modify_role, can_change_role
+from models.block import is_blocked
+from utils.permissions import can_modify_role, can_change_role, can_view_profile, can_interact_with_profile
 from utils.validators import validate_image
 
 
@@ -20,16 +21,30 @@ def profile(profile_user_id):
     if profile_user is None:
         abort(404)
     
-    posts = get_posts(user=current_user, profile_user=profile_user)
-    reposts = get_reposts_for_user(user_id=profile_user_id)
+    blocked_by_them = False
+    blocked_by_me = False
+
+    if current_user:
+        if can_view_profile(current_user, profile_user):
+            posts = get_posts(user=current_user, profile_user=profile_user)
+            reposts = get_reposts_for_user(user_id=profile_user_id)
+        else:
+            posts, reposts = []
+            blocked_by_them = True
+        
+        if current_user and is_blocked("user", current_user.id, "user", profile_user.id):
+            blocked_by_me = True
 
     return render_template(
-        "profile/profile.html", 
+        "profile/profile.html",
         current_user=current_user, 
         profile_user=profile_user, 
         posts=posts, reposts=reposts,
         can_modify_role=can_modify_role,
         can_change_role=can_change_role,
+        can_interact_with_profile=can_interact_with_profile,
+        blocked_by_them=blocked_by_them,
+        blocked_by_me=blocked_by_me,
         show_bottom_bar=True
     )
 
@@ -37,6 +52,7 @@ def profile(profile_user_id):
 @profiles_bp.route("/avatar/<int:profile_user_id>", methods=["POST"])
 def update_avatar(profile_user_id):
     user_id = session.get("user_id")
+
     if not user_id or user_id != profile_user_id:
         return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
 
@@ -63,6 +79,7 @@ def update_avatar(profile_user_id):
 @profiles_bp.route("/banner/<int:profile_user_id>", methods=["POST"])
 def update_banner(profile_user_id):
     user_id = session.get("user_id")
+    
     if not user_id or user_id != profile_user_id:
         return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
 
@@ -113,6 +130,7 @@ def change_role(profile_user_id):
         return jsonify({"new_role": new_role})
     
     return redirect(url_for("profile.profile", profile_user_id=profile_user_id))
+
 
 @profiles_bp.route("/ban/<int:profile_user_id>", methods=["POST"])
 def ban_user(profile_user_id):

@@ -5,11 +5,12 @@ from models.public import (get_public_by_id, get_public_by_tag,
                            update_public_avatar, update_public_banner,
                            get_member, get_member_by_id,
                            get_public_members, update_member_role,
-                           is_member, follow_public, unfollow_public,
                            toggle_ban_public, get_owners_count)
+from models.follow import follow_public, unfollow_public, is_member
 from models.user import get_user_by_id
 from models.post import get_posts
-from utils.permissions import can_edit_public, can_delete_public, can_change_member_role, can_kick_member
+from models.block import is_blocked
+from utils.permissions import can_edit_public, can_delete_public, can_change_member_role, can_kick_member, can_interact_with_public, can_view_public
 from utils.validators import is_valid_username, is_valid_tag, is_valid_bio, validate_image
 from utils.helpers import generate_unique_tag
 #from config import Config
@@ -29,14 +30,28 @@ def show_public(tag):
     
     if public is None:
         abort(404)
+
+    blocked_by_them = False
+    blocked_by_me = False
+
+    if current_user:
+        if can_view_public(current_user, public):
+            posts = get_posts(user=current_user, public=public)
+        else:
+            posts = []
+            blocked_by_them = True
     
-    posts = get_posts(user=current_user, public=public)
+        if is_blocked("user", current_user.id, "public", public.id):
+            blocked_by_me = True
 
     return render_template(
         "publics/view_public.html", 
         current_user=current_user, 
-        public=public, 
+        public=public,
         posts=posts,
+        can_interact_with_public=can_interact_with_public,
+        blocked_by_them=blocked_by_them,
+        blocked_by_me=blocked_by_me,
         show_bottom_bar=True
     )
 
@@ -277,12 +292,20 @@ def update_banner(public_id):
 
 @publics_bp.route("/publics/followers/<tag>")
 def show_public_followers(tag):
+    user_id = session.get("user_id")
+
+    current_user = get_user_by_id(user_id)
     public = get_public_by_tag(tag)
 
     if not public: 
         return abort(404)
 
     members = get_public_members(public.id)
+
+    if current_user and not can_interact_with_public(current_user, public):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Access denied"}), 403
+        abort(403)    
 
     return render_template("publics/followers.html", public=public, members=members)
 
@@ -295,12 +318,23 @@ def toggle_follow(public_id):
             return jsonify({"error": "Unauthorized"}), 401
         return redirect(url_for("auth.login"))
     
+    current_user = get_user_by_id(user_id)
     public = get_public_by_id(public_id)
+
+    if current_user is None:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "User not found"}), 404
+        return abort(404)
 
     if public is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Public not found"}), 404
         return abort(404)
+    
+    if not can_interact_with_public(current_user, public):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Access denied"}), 403
+        abort(403)    
 
     if is_member(user_id, public_id):
         unfollow_public(user_id, public_id)

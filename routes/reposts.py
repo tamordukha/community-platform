@@ -2,6 +2,7 @@ from flask import Flask, Blueprint, current_app, render_template, request, redir
 from models.user import get_user_by_id
 from models.repost import is_repost, toggle_repost, get_repost_count_for_post
 from models.post import get_post
+from utils.permissions import can_interact_with_post
 
 reposts_bp = Blueprint('reposts', __name__)
 
@@ -27,7 +28,13 @@ def toggle_repost_route():
             return jsonify({"error": "Missing post_id"}), 400
         abort(404)
 
+    current_user = get_user_by_id(user_id)
     post = get_post(post_id)
+
+    if not current_user:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "User not found"}), 404
+        abort(404)
 
     if not post:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -43,7 +50,12 @@ def toggle_repost_route():
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Cannot repost private post"}), 403
         abort(403)
-    
+
+    if not can_interact_with_post(current_user, post):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Access denied"}), 403
+        abort(403)    
+
     toggle_repost(user_id, post_id)
     reposted = is_repost(user_id, post_id)
     count = get_repost_count_for_post(post_id)

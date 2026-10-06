@@ -4,7 +4,7 @@ from models.post import get_posts, get_post, add_post, update_post, delete_post
 from models.comment import get_comments_for_post
 from models.reply import get_replies_for_post
 from models.public import get_public_by_tag, get_member
-from utils.permissions import can_view_post, can_edit_post, can_delete_post, can_edit_public
+from utils.permissions import can_view_post, can_edit_post, can_delete_post, can_edit_public, can_interact_with_post
 from config import Config
 
 posts_bp = Blueprint('posts', __name__)
@@ -43,6 +43,7 @@ def show_post(post_id):
         comments=comments, replies=replies,
         can_edit_post=can_edit_post,
         can_delete_post=can_delete_post,
+        can_interact_with_post=can_interact_with_post
         )
 
 @posts_bp.route("/post/create", methods=["GET", "POST"])

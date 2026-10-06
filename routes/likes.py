@@ -3,9 +3,11 @@ from models.like import (toggle_like_post, toggle_like_comment, toggle_like_repl
                         get_post_like, get_comment_like, get_reply_like, 
                         get_post_likes_count, get_comment_likes_count, get_reply_likes_count)
 
+from models.user import get_user_by_id
 from models.post import get_post
 from models.comment import get_comment
 from models.reply import get_reply
+from utils.permissions import can_interact_with_post
 
 likes_bp = Blueprint('likes', __name__)
 
@@ -25,6 +27,7 @@ def like_post():
             return jsonify({"error": "Missing post_id"}), 400
         return redirect(url_for("posts.feed"))
 
+    user = get_user_by_id(session.get("user_id"))
     post = get_post(post_id)
 
     if not post:
@@ -32,7 +35,13 @@ def like_post():
             return jsonify({"error": "Post not found"}), 404
         abort(404)
 
+    if not can_interact_with_post(user, post):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Access denied"}), 403
+        abort(403)    
+
     toggle_like_post(user_id, post_id)
+
     like = get_post_like(user_id, post_id)
     liked = like is not None
     count = get_post_likes_count(post_id)
@@ -66,6 +75,7 @@ def like_comment():
             return jsonify({"error": "Missing comment_id"}), 400
         return redirect(url_for("posts.feed"))
 
+    user = get_user_by_id(session.get("user_id"))
     post = get_post(post_id)
     comment = get_comment(comment_id)
 
@@ -79,7 +89,13 @@ def like_comment():
             return jsonify({"error": "Comment not found"}), 404
         abort(404)
 
+    if not can_interact_with_post(user, post):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Access denied"}), 403
+        abort(403)    
+
     toggle_like_comment(user_id, comment_id)
+
     like = get_comment_like(user_id, comment_id)
     liked = like is not None
     count = get_comment_likes_count(comment_id)
@@ -111,6 +127,7 @@ def like_reply():
             return jsonify({"error": "Missing reply_id"}), 400
         return redirect(url_for("posts.feed"))
 
+    user = get_user_by_id(session.get("user_id"))
     post = get_post(post_id)
     reply = get_reply(reply_id)
 
@@ -124,7 +141,13 @@ def like_reply():
             return jsonify({"error": "Reply not found"}), 404
         abort(404)
 
+    if not can_interact_with_post(user, post):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Access denied"}), 403
+        abort(403)
+
     toggle_like_reply(user_id, reply_id)
+
     like = get_reply_like(user_id, reply_id)
     liked = like is not None
     count = get_reply_likes_count(reply_id)

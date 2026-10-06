@@ -1,25 +1,59 @@
 from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort, jsonify
 from models.follow import follow_user, unfollow_user, is_following, get_followers, get_following
 from models.user import get_user_by_id
+from models.block import is_blocked
+from utils.permissions import can_view_profile, can_interact_with_profile
 
 follows_bp = Blueprint('follows', __name__)
 
 @follows_bp.route("/followers/<int:user_id>", methods=["GET", "POST"])
 def show_followers(user_id):
-    user = get_user_by_id(user_id)
-    if not user:
+    current_user_id = session.get("user_id")
+
+    current_user = get_user_by_id(current_user_id)
+    profile_user = get_user_by_id(user_id)
+
+    if not profile_user:
         abort(404)
+
+    blocked_by_them = False
+
+    if current_user:
+        blocked_by_them = not can_view_profile(current_user, profile_user)
+
     followers = get_followers(user_id)
-    return render_template("profile/followers.html", user=user, followers=followers)
+
+    return render_template(
+        "profile/followers.html",
+        profile_user=profile_user,
+        followers=followers,
+        blocked_by_them=blocked_by_them
+    )
 
 
 @follows_bp.route("/following/<int:user_id>", methods=["GET", "POST"])
 def show_following(user_id):
-    user = get_user_by_id(user_id)
-    if not user:
+    current_user_id = session.get("user_id")
+
+    current_user = get_user_by_id(current_user_id)
+    profile_user = get_user_by_id(user_id)
+
+    if not profile_user:
         abort(404)
+
+    blocked_by_them = False
+
+    if current_user:
+        blocked_by_them = not can_view_profile(current_user, profile_user)
+
     following = get_following(user_id)
-    return render_template("profile/following.html", user=user, following=following)
+
+    return render_template(
+        "profile/following.html",
+        profile_user=profile_user,
+        following=following,
+        blocked_by_them=blocked_by_them
+    )
 
 
 @follows_bp.route("/follow/<int:user_id>", methods=["POST"])
@@ -37,11 +71,18 @@ def toggle_follow(user_id):
             return jsonify({"error": "Cannot follow yourself"}), 400
         return redirect(url_for("profiles.profile", profile_user_id=user_id))
     
-    target_user = get_user_by_id(user_id)
-    if target_user is None:
+    current_user = get_user_by_id(follower_id)
+    target_user = get_user_by_id(following_id)
+
+    if target_user is None or current_user is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "User not found"}), 404
         abort(404)
+
+    if not can_interact_with_profile(current_user, target_user):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Access denied"}), 403
+        abort(403)
 
     if is_following(follower_id, following_id):
         unfollow_user(follower_id, following_id)

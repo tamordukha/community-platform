@@ -39,19 +39,22 @@ def get_following(follower_id):
 def get_followers(following_id):
     return db.session.query(Follow).filter_by(following_id=following_id).all()
 
+def follow_public(user_id, public_id):
+    member = PublicMember(
+        user_id=user_id,
+        public_id=public_id
+    )
 
-
-def follow_public(public_id, member_id):
-    member = PublicMember(public_id=public_id, user_id=member_id, role="member")
     db.session.add(member)
     db.session.commit()
 
-def unfollow_public(public_id, member_id):
-    member = db.session.query(PublicMember).filter_by(public_id=public_id, user_id=member_id).first()
-    if member:
+def unfollow_public(user_id, public_id):
+    member = db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first()
+    owners_count = db.session.query(PublicMember).filter_by(role="owner", public_id=public_id).count()
+
+    if member and not (member.role=="owner" and owners_count<=1):
         db.session.delete(member)
         db.session.commit()
 
-def is_following_public(public_id, member_id):
-    member = db.session.query(PublicMember).filter_by(public_id=public_id, user_id=member_id).first()
-    return member is not None
+def is_member(user_id, public_id):
+    return db.session.query(PublicMember).filter_by(user_id=user_id, public_id=public_id).first() is not None

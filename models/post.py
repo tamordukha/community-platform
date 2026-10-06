@@ -1,5 +1,8 @@
 from datetime import datetime, UTC
 from database.db import db
+
+from models.block import is_blocked
+
 from utils.permissions import can_view_post
 from services.feed_service import calculate_post_score
 
@@ -30,9 +33,18 @@ def get_posts(user=None, profile_user=None, public=None, feed=False):
     posts = [post for post in query.all() if can_view_post(user, post)]
     
     if feed:
+        if user:
+            posts = [
+                post for post in posts
+                if not (
+                    (post.author_id and is_blocked("user", user.id, "user", post.author_id)) or
+                    (post.public_id and is_blocked("user", user.id, "public", post.public_id))
+                )
+            ]
+
         posts_with_score = [(post, calculate_post_score(post)) for post in posts]
         posts_with_score.sort(key=lambda x: x[1], reverse=True)
-        posts = [post for post, score in posts_with_score]
+        posts = [post for post, _ in posts_with_score]
     
     return posts
 
