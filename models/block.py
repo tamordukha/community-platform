@@ -30,7 +30,7 @@ def toggle_block(
     if block:
         db.session.delete(block)
     else:
-        Block(blocker_id=blocker_id,
+        block = Block(blocker_id=blocker_id,
             blocked_id=blocked_id,
             blocker_type=blocker_type,
             blocked_type=blocked_type)

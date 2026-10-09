@@ -179,8 +179,15 @@ def create_reply(create_comment):
 
 @pytest.fixture
 def follow_user():
-    def _follow(client, following_id):
+    def _follow(client, following_id=2):
         return client.post(f"/follow/{following_id}")
+    return _follow
+
+
+@pytest.fixture
+def follow_public():
+    def _follow(client, public_id=1):
+        return client.post(f"/publics/follow/{public_id}")
     return _follow
 
 
@@ -213,13 +220,6 @@ def get_member():
 
 
 @pytest.fixture
-def follow_public():
-    def _follow(client, public_id=1):
-        return client.post(f"/publics/follow/{public_id}")
-    return _follow
-
-
-@pytest.fixture
 def kick_member():
     def _kick(client, tag="public_tag", member_id=2):
         return client.post(f"/publics/{tag}/members/{member_id}/kick")
@@ -234,3 +234,32 @@ def change_member_role():
             data={"new_role": new_role}
         )
     return _change
+
+
+# Blocks
+
+@pytest.fixture
+def block_user():
+    def _block(client, profile_user_id=2):
+        return client.post(
+            f"/toggle_block/user/{profile_user_id}"
+        )
+    return _block
+
+
+@pytest.fixture
+def block_public():
+    def _block(client, public_tag="public_tag"):
+        return client.post(
+            f"/toggle_block/publics/{public_tag}"
+        )
+    return _block
+
+
+@pytest.fixture
+def public_block_user():
+    def _block(client, public_tag="public_tag", profile_user_id=1):
+        return client.post(
+            f"/toggle_block/publics/{public_tag}/user/{profile_user_id}"
+        )
+    return _block

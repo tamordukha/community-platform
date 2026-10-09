@@ -6,14 +6,15 @@ def can_view_post(user, post) -> bool:
     if user:
         if user.role in ("moderator", "admin"):
             return True
+        
+        if user.id == post.author_id:
+            return True
     
-        if post.public_id:
-            if is_blocked("public", post.public_id, "user", user.id):
-                return False
+        if post.public_id and is_blocked("public", post.public_id, "user", user.id):
+            return False
 
-        if post.author_id:
-            if is_blocked("user", post.author_id, "user", user.id):
-                return False
+        if post.author_id and is_blocked("user", post.author_id, "user", user.id):
+            return False
     
     if post.is_public:
         return True
@@ -21,7 +22,7 @@ def can_view_post(user, post) -> bool:
     if not user:
         return False
 
-    return user.id == post.author_id
+    return False
 
 
 def can_edit_post(user, post) -> bool:
@@ -278,14 +279,8 @@ def can_block_user(blocker, blocked) -> bool:
     if blocker.id == blocked.id:
         return False
     
-    if blocker.role == "admin" and blocked.role != "admin":
-        return True
+    return True
     
-    if blocker.role == "moderator" and blocked.role == "user":
-        return True
-    
-    return False
-
 
 def can_block_member(current_member, user, member=None) -> bool:
     if not current_member or not user:
