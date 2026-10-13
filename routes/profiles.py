@@ -29,7 +29,7 @@ def profile(profile_user_id):
             posts = get_posts(user=current_user, profile_user=profile_user)
             reposts = get_reposts_for_user(user_id=profile_user_id)
         else:
-            posts, reposts = []
+            posts, reposts = [], []
             blocked_by_them = True
         
         if current_user and is_blocked("user", current_user.id, "user", profile_user.id):

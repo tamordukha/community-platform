@@ -6,7 +6,7 @@ from utils.permissions import can_view_profile, can_interact_with_profile
 
 follows_bp = Blueprint('follows', __name__)
 
-@follows_bp.route("/followers/<int:user_id>", methods=["GET", "POST"])
+@follows_bp.route("/followers/<int:user_id>")
 def show_followers(user_id):
     current_user_id = session.get("user_id")
 
@@ -16,22 +16,19 @@ def show_followers(user_id):
     if not profile_user:
         abort(404)
 
-    blocked_by_them = False
-
-    if current_user:
-        blocked_by_them = not can_view_profile(current_user, profile_user)
+    if current_user and not can_view_profile(current_user, profile_user):
+        abort(403)
 
     followers = get_followers(user_id)
 
     return render_template(
         "profile/followers.html",
         profile_user=profile_user,
-        followers=followers,
-        blocked_by_them=blocked_by_them
+        followers=followers
     )
 
 
-@follows_bp.route("/following/<int:user_id>", methods=["GET", "POST"])
+@follows_bp.route("/following/<int:user_id>")
 def show_following(user_id):
     current_user_id = session.get("user_id")
 
@@ -41,18 +38,15 @@ def show_following(user_id):
     if not profile_user:
         abort(404)
 
-    blocked_by_them = False
-
-    if current_user:
-        blocked_by_them = not can_view_profile(current_user, profile_user)
+    if current_user and not can_view_profile(current_user, profile_user):
+        abort(403)
 
     following = get_following(user_id)
 
     return render_template(
         "profile/following.html",
         profile_user=profile_user,
-        following=following,
-        blocked_by_them=blocked_by_them
+        following=following
     )
 
 

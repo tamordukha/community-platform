@@ -3,7 +3,7 @@ from models.user import User, get_user_by_id
 from models.post import Post, get_post
 from models.comment import Comment, get_comment
 from models.reply import Reply, get_reply ,add_reply, add_reply_to_reply, update_reply, delete_reply, toggle_hide_reply
-from utils.permissions import can_edit_content, can_delete_content, can_hide_content, can_interact_with_post
+from utils.permissions import can_edit_content, can_delete_content, can_hide_content, can_view_post, can_interact_with_post, is_admin
 from config import Config
 
 replies_bp = Blueprint('replies', __name__)
@@ -120,7 +120,7 @@ def edit_reply(post_id, comment_id, reply_id):
             return jsonify({"error": "Reply not found"}), 404
         abort(404)
 
-    if not can_edit_content(user, reply) and can_interact_with_post(user, post):
+    if not is_admin(user) or not can_edit_content(user, comment) or not can_interact_with_post(user, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
@@ -164,7 +164,7 @@ def del_reply(post_id, comment_id, reply_id):
             return jsonify({"error": "Reply not found"}), 404
         abort(404)
 
-    if not can_delete_content(user, reply, post)  and can_interact_with_post(user, post):
+    if not can_delete_content(user, reply, post) or not can_view_post(user, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
@@ -203,7 +203,7 @@ def hide_reply(post_id, comment_id, reply_id):
             return jsonify({"error": "Reply not found"}), 404
         abort(404)
 
-    if not can_hide_content(user, reply, post) and can_interact_with_post(user, post):
+    if not can_hide_content(user, reply, post) or not can_view_post(user, post):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)

@@ -2,6 +2,7 @@ from flask import Flask, Blueprint, current_app, render_template, request, redir
 from models.user import get_user_by_id
 from models.repost import is_repost, toggle_repost, get_repost_count_for_post
 from models.post import get_post
+from models.public import get_public_by_id
 from utils.permissions import can_interact_with_post
 
 reposts_bp = Blueprint('reposts', __name__)
@@ -14,14 +15,8 @@ def toggle_repost_route():
         return redirect(url_for("auth.login"))
 
     user_id = session["user_id"]
-    profile_user_id = request.form.get("profile_user_id")
     redirect_to = request.form.get("redirect_to", "index")
     post_id = request.form.get("post_id")
-
-    if not profile_user_id:
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Missing user"}), 404
-        abort(404)
 
     if not post_id:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -40,8 +35,8 @@ def toggle_repost_route():
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Post not found"}), 404
         abort(404)
-
-    if post.author_id == user_id:
+    
+    if post.author_id and post.author_id == user_id:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Cannot repost your own post"}), 400
         abort(400)
@@ -63,8 +58,13 @@ def toggle_repost_route():
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({"reposted": reposted, "count": count})
 
+    if redirect_to == "public" and post.public_id:
+        public = get_public_by_id(post.public_id)
+        return redirect(url_for("publics.show_public", tag=public.tag))
+        
     if redirect_to == "profile":
-        return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
+        return redirect(url_for("profiles.profile", profile_user_id=post.author_id))
+
     if redirect_to == "post":
         return redirect(url_for("posts.show_post", post_id=post_id))
     

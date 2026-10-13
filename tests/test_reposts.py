@@ -28,7 +28,7 @@ def test_repost_success(auth_client, auth_foreign_client, create_post):
 
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2}
+        data={"post_id": 1}
     )
 
     assert response.status_code == 302
@@ -45,7 +45,7 @@ def test_unrepost_success(auth_client, auth_foreign_client, create_post):
     for _ in range(2):
         response = auth_client.post(
             "/repost",
-            data={"post_id": 1, "profile_user_id": 2}
+            data={"post_id": 1}
         )
 
     assert response.status_code == 302
@@ -61,7 +61,7 @@ def test_repost_unauthorized(client, auth_foreign_client, create_post):
 
     response = client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2}
+        data={"post_id": 1}
     )
 
     assert response.status_code == 302
@@ -75,7 +75,7 @@ def test_repost_unauthorized(client, auth_foreign_client, create_post):
 def test_repost_missing_post(auth_client, auth_foreign_client):
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2}
+        data={"post_id": 1}
     )
 
     assert response.status_code == 404
@@ -90,7 +90,7 @@ def test_cannot_repost_own_post(auth_client, create_post):
 
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 1}
+        data={"post_id": 1}
     )
 
     assert response.status_code == 400
@@ -105,7 +105,7 @@ def test_cannot_repost_private_post(auth_client, auth_foreign_client, create_pos
 
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2}
+        data={"post_id": 1}
     )
 
     assert response.status_code == 403
@@ -122,7 +122,7 @@ def test_repost_ajax_success(auth_client, auth_foreign_client, create_post):
 
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2},
+        data={"post_id": 1},
         headers={"X-Requested-With": "XMLHttpRequest"}
     )
 
@@ -139,7 +139,7 @@ def test_repost_ajax_unauthorized(client, auth_foreign_client, create_post):
 
     response = client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2},
+        data={"post_id": 1},
         headers={"X-Requested-With": "XMLHttpRequest"}
     )
 
@@ -154,7 +154,7 @@ def test_repost_ajax_unauthorized(client, auth_foreign_client, create_post):
 def test_repost_ajax_missing_post(auth_client, auth_foreign_client):
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2},
+        data={"post_id": 1},
         headers={"X-Requested-With": "XMLHttpRequest"}
     )
 
@@ -171,7 +171,7 @@ def test_cannot_repost_ajax_own_post(auth_client, create_post):
 
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 1},
+        data={"post_id": 1},
         headers={"X-Requested-With": "XMLHttpRequest"}
     )
 
@@ -188,7 +188,7 @@ def test_cannot_repost_ajax_private_post(auth_client, auth_foreign_client, creat
 
     response = auth_client.post(
         "/repost",
-        data={"post_id": 1, "profile_user_id": 2},
+        data={"post_id": 1},
         headers={"X-Requested-With": "XMLHttpRequest"}
     )
 

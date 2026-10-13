@@ -45,7 +45,7 @@ def show_public(tag):
             blocked_by_me = True
 
     return render_template(
-        "publics/view_public.html", 
+        "publics/view.html", 
         current_user=current_user, 
         public=public,
         posts=posts,
@@ -54,6 +54,7 @@ def show_public(tag):
         blocked_by_me=blocked_by_me,
         show_bottom_bar=True
     )
+
 
 @publics_bp.route("/publics/create", methods=["GET","POST"])
 def create_public():
@@ -300,12 +301,12 @@ def show_public_followers(tag):
     if not public: 
         return abort(404)
 
-    members = get_public_members(public.id)
-
-    if current_user and not can_interact_with_public(current_user, public):
+    if current_user and not can_view_public(current_user, public):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
-        abort(403)    
+        abort(403)
+
+    members = get_public_members(public.id) 
 
     return render_template("publics/followers.html", public=public, members=members)
 
@@ -334,12 +335,11 @@ def toggle_follow(public_id):
     if not can_interact_with_public(current_user, public):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
-        abort(403)    
+        abort(403)
 
     if is_member(user_id, public_id):
         unfollow_public(user_id, public_id)
         following = is_member(user_id, public_id)
-        print(following)
     else:
         follow_public(user_id, public_id)
         following = is_member(user_id, public_id)
