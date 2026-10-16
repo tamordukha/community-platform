@@ -1,7 +1,7 @@
-from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort, jsonify
-from models.user import User, get_user_by_id
-from models.post import Post, get_post
-from models.comment import Comment, get_comment, add_comment, update_comment, delete_comment, toggle_hide_comment
+from flask import Flask, Blueprint, request, redirect, url_for, session, abort, jsonify
+from models.user import get_user_by_id
+from models.post import get_post
+from models.comment import get_comment, add_comment, update_comment, delete_comment, toggle_hide_comment
 from utils.permissions import can_edit_content, can_delete_content, can_hide_content, can_interact_with_post, can_view_post, is_admin
 from config import Config
 

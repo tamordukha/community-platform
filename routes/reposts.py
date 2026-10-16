@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, abort, flash, jsonify
+from flask import Flask, Blueprint, request, redirect, url_for, session, abort, flash, jsonify
 from models.user import get_user_by_id
 from models.repost import is_repost, toggle_repost, get_repost_count_for_post
 from models.post import get_post

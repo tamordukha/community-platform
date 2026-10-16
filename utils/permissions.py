@@ -239,22 +239,6 @@ def can_change_role(current_user, profile_user, new_role) -> bool:
     return False
 
 
-def can_modify_role(current_user, profile_user) -> bool:
-    if not current_user or not profile_user:
-        return False
-    
-    if current_user.id == profile_user.id:
-        return False
-    
-    if current_user.role == "admin" and profile_user.role != "admin":
-        return True
-    
-    if current_user.role == "moderator" and profile_user.role == "user":
-        return True
-    
-    return False
-
-
 def can_interact_with_profile(current_user, profile_user) -> bool:
     if not current_user or not profile_user:
         return False
@@ -306,5 +290,22 @@ def can_block_member(current_member, user, member=None) -> bool:
 def is_moderator(user) -> bool:
     return user.role in ("moderator", "admin")
 
+
 def is_admin(user) -> bool:
     return user.role == "admin"
+
+
+def can_manage(current_user, profile_user) -> bool:
+    if not current_user or not profile_user:
+        return False
+    
+    if current_user.id == profile_user.id:
+        return False
+    
+    if current_user.role == "admin" and profile_user.role != "admin":
+        return True
+    
+    if current_user.role == "moderator" and profile_user.role == "user":
+        return True
+    
+    return False

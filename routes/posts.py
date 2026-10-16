@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort
+from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, abort
 from models.user import get_user_by_id
 from models.post import get_posts, get_post, add_post, update_post, delete_post
 from models.comment import get_comments_for_post

@@ -1,7 +1,6 @@
 from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort, jsonify
 from models.follow import follow_user, unfollow_user, is_following, get_followers, get_following
 from models.user import get_user_by_id
-from models.block import is_blocked
 from utils.permissions import can_view_profile, can_interact_with_profile
 
 follows_bp = Blueprint('follows', __name__)

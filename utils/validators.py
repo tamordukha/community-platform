@@ -46,3 +46,8 @@ def validate_image(file):
         return False
     
     return True
+
+def is_valid_reason(reason):
+    if not reason or len(reason)<4 or len(reason)>200:
+        return False
+    return True

@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, flash, abort, jsonify
+from flask import Flask, Blueprint, current_app, render_template, request, redirect, url_for, session, abort, jsonify
 import os
 from models.public import (get_public_by_id, get_public_by_tag,
                            add_public, update_public, delete_public,
@@ -13,7 +13,6 @@ from models.block import is_blocked
 from utils.permissions import can_edit_public, can_delete_public, can_change_member_role, can_kick_member, can_interact_with_public, can_view_public
 from utils.validators import is_valid_username, is_valid_tag, is_valid_bio, validate_image
 from utils.helpers import generate_unique_tag
-#from config import Config
 
 publics_bp = Blueprint('publics', __name__)
 

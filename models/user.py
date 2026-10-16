@@ -72,9 +72,3 @@ def update_user_role(user_id, role):
     user = db.session.get(User, user_id)
     user.role = role
     db.session.commit()
-
-def toggle_ban_user(user_id):
-    user = db.session.get(User, user_id)
-    if user:
-        user.is_banned = not user.is_banned
-        db.session.commit()

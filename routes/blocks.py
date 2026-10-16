@@ -40,6 +40,7 @@ def toggle_block_user(profile_user_id):
     
     return redirect(url_for("profiles.profile", profile_user_id=profile_user_id))
 
+
 # user -> public
 @blocks_bp.route("/toggle_block/publics/<tag>", methods=["POST"])
 def toggle_block_public(tag):
@@ -70,6 +71,7 @@ def toggle_block_public(tag):
         return jsonify({"blocked": blocked})
     
     return redirect(url_for("publics.show_public", tag=tag))
+
 
 # public -> user
 @blocks_bp.route("/toggle_block/publics/<tag>/user/<int:profile_user_id>", methods=["POST"])
