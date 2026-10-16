@@ -63,7 +63,7 @@ def edit_comment(post_id, comment_id):
             return jsonify({"error": "Comment not found"}), 404
         abort(404)
 
-    if not is_admin(user) or not can_edit_content(user, comment) or not can_interact_with_post(user, post):
+    if not is_admin(user) and (not can_edit_content(user, comment) or not can_interact_with_post(user, post)):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)

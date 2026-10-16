@@ -1,8 +1,8 @@
-from flask import Flask, Blueprint, render_template, request, redirect, url_for, session, flash, abort, jsonify
-from models.user import User, get_user_by_id
-from models.post import Post, get_post
-from models.comment import Comment, get_comment
-from models.reply import Reply, get_reply ,add_reply, add_reply_to_reply, update_reply, delete_reply, toggle_hide_reply
+from flask import Flask, Blueprint, request, redirect, url_for, session, abort, jsonify
+from models.user import get_user_by_id
+from models.post import get_post
+from models.comment import get_comment
+from models.reply import get_reply ,add_reply, add_reply_to_reply, update_reply, delete_reply, toggle_hide_reply
 from utils.permissions import can_edit_content, can_delete_content, can_hide_content, can_view_post, can_interact_with_post, is_admin
 from config import Config
 
@@ -120,7 +120,7 @@ def edit_reply(post_id, comment_id, reply_id):
             return jsonify({"error": "Reply not found"}), 404
         abort(404)
 
-    if not is_admin(user) or not can_edit_content(user, comment) or not can_interact_with_post(user, post):
+    if not is_admin(user) and (not can_edit_content(user, reply) or not can_interact_with_post(user, post)):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Access denied"}), 403
         abort(403)
