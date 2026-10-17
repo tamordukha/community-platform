@@ -36,7 +36,7 @@ def ban(profile_user_id):
     if is_banned(profile_user.id):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "User is already banned"}), 400
-        abort(409)
+        abort(400)
     
     ban_user(profile_user.id, current_user.id, reason)
 

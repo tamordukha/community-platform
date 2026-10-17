@@ -34,7 +34,7 @@ def mute_user(user_id, moderator_id, reason, expires_at):
 
 def unmute_user(mute_id):
     mute = db.session.get(Mute, mute_id)
-    if mute:
+    if mute and mute.is_active:
         mute.is_active = False
         db.session.commit()
 
@@ -53,10 +53,10 @@ def get_mute(mute_id):
 def get_filter_mutes(user_id=None, moderator_id=None, is_active=None):
     query = db.session.query(Mute)
 
-    if user_id is not None:
+    if user_id:
         query = query.filter_by(user_id=user_id)
 
-    if moderator_id is not None:
+    if moderator_id:
         query = query.filter_by(moderator_id=moderator_id)
 
     if is_active is not None:

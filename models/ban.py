@@ -32,7 +32,7 @@ def ban_user(user_id, moderator_id, reason):
 
 def unban_user(ban_id):
     ban = db.session.get(Ban, ban_id)
-    if ban:
+    if ban and ban.is_active:
         ban.is_active = False
         db.session.commit()
 
@@ -49,10 +49,10 @@ def get_ban(ban_id):
 def get_filter_bans(user_id=None, moderator_id=None, is_active=None):
     query = db.session.query(Ban)
 
-    if user_id is not None:
+    if user_id:
         query = query.filter_by(user_id=user_id)
 
-    if moderator_id is not None:
+    if moderator_id:
         query = query.filter_by(moderator_id=moderator_id)
 
     if is_active is not None:
