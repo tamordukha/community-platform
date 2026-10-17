@@ -1,17 +1,18 @@
 from datetime import datetime, UTC
 from database.db import db
 
-from models.user import User
-
 class Ban(db.Model):
     __tablename__ = "bans"
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     moderator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    reason = db.Column(db.String(100), nullable=False)
+    reason = db.Column(db.String(200), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
+
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('bans_received', lazy='dynamic'))
+    moderator = db.relationship('User', foreign_keys=[moderator_id], backref=db.backref('bans_given', lazy='dynamic'))
 
 
 def ban_user(user_id, moderator_id, reason):

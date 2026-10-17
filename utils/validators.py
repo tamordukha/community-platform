@@ -51,3 +51,12 @@ def is_valid_reason(reason):
     if not reason or len(reason)<4 or len(reason)>200:
         return False
     return True
+
+def is_valid_duration(duration):
+    if not duration or len(duration) < 2:
+        return False
+    if not duration[:-1].isdigit():
+        return False
+    if duration[-1] not in ("h", "d"):
+        return False
+    return True

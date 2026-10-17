@@ -8,5 +8,6 @@ from models.repost import Repost
 from models.public import Public, PublicMember
 from models.block import Block
 from models.ban import Ban
+from models.mute import Mute
 
 from models.user import get_user_by_id

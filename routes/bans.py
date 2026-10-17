@@ -53,17 +53,17 @@ def unban(ban_id):
             return jsonify({"error": "Unauthorized"}), 401
         return redirect(url_for("auth.login"))
 
-    if ban_id is None:
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "ban_id not found"}), 404
-        abort(404)
-
     ban = get_ban(ban_id)
 
     if ban is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Ban is not found"}), 404
         abort(404)
+
+    if ban.is_active == False:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Ban is not active"}), 400
+        abort(400)
 
     current_user = get_user_by_id(session["user_id"])
     profile_user = get_user_by_id(ban.user_id)
@@ -72,11 +72,6 @@ def unban(ban_id):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "User not found"}), 404
         abort(404)
-
-    if ban.is_active == False:
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Ban is not active"}), 400
-        abort(400)
 
     if can_manage(current_user, profile_user):
         unban_user(ban_id)

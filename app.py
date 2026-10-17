@@ -27,6 +27,8 @@ def register_routes(app):
     from routes.reposts import reposts_bp
     from routes.blocks import blocks_bp
     from routes.bans import bans_bp
+    from routes.mutes import mutes_bp
+
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(posts_bp)
@@ -40,6 +42,7 @@ def register_routes(app):
     app.register_blueprint(reposts_bp)
     app.register_blueprint(blocks_bp)
     app.register_blueprint(bans_bp)
+    app.register_blueprint(mutes_bp)
 
 app = create_app()
 
