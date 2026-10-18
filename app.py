@@ -29,6 +29,7 @@ def register_routes(app):
     from routes.bans import bans_bp
     from routes.mutes import mutes_bp
     from routes.reports import reports_bp
+    from routes.moderation import moderation_bp
 
 
     app.register_blueprint(auth_bp)
@@ -45,6 +46,7 @@ def register_routes(app):
     app.register_blueprint(bans_bp)
     app.register_blueprint(mutes_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(moderation_bp)
 
 app = create_app()
 

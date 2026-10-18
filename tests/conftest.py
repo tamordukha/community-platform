@@ -263,3 +263,22 @@ def public_block_user():
             f"/toggle_block/publics/{public_tag}/user/{profile_user_id}"
         )
     return _block
+
+
+# Ban
+
+@pytest.fixture
+def ban():
+    def _ban(client, profile_user_id=2, reason="reason"):
+        return client.post(
+            f"/ban/{profile_user_id}",
+            data={"ban_reason": reason}
+        )
+    return _ban
+
+
+@pytest.fixture
+def unban():
+    def _unban(client, ban_id=1):
+        return client.post(f"/unban/{ban_id}")
+    return _unban

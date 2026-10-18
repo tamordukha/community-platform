@@ -18,7 +18,7 @@ def ban(profile_user_id):
     profile_user = get_user_by_id(profile_user_id)
     reason = request.form.get("ban_reason")
 
-    if profile_user is None:
+    if not current_user or not profile_user:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "User not found"}), 404
         abort(404)
@@ -57,7 +57,7 @@ def unban(ban_id):
 
     if ban is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Ban is not found"}), 404
+            return jsonify({"error": "Ban not found"}), 404
         abort(404)
 
     if ban.is_active == False:
