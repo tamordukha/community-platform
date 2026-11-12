@@ -22,7 +22,7 @@ def mute(profile_user_id):
     reason = request.form.get("mute_reason")
     duration = request.form.get("mute_duration")  # "24h", "7d"
 
-    if not is_valid_duration(duration, hours):
+    if not is_valid_duration(duration):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Duration must use a number followed by a unit, e.g., '24h' or '7d'"}), 400
         abort(400)
@@ -75,12 +75,12 @@ def unmute(mute_id):
 
     if mute is None:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Mute is not found"}), 404
+            return jsonify({"error": "Mute not found"}), 404
         abort(404)
 
     if not mute.is_active:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Mute is not active"}), 400
+            return jsonify({"error": "Mute not active"}), 400
         abort(400)
 
     current_user = get_user_by_id(session["user_id"])

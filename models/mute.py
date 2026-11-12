@@ -16,9 +16,12 @@ class Mute(db.Model):
     moderator = db.relationship('User', foreign_keys=[moderator_id], backref=db.backref('mutes_given', lazy='dynamic'))
 
 
-def mute_user(user_id, moderator_id, reason, expires_at):
+def mute_user(user_id, moderator_id, reason, expires_at=None):
     if is_muted(user_id):
         return None
+    
+    if expires_at is None:
+        expires_at = datetime.now(UTC) + timedelta(hours=24)
 
     mute = Mute(
         user_id      = user_id,
@@ -43,7 +46,9 @@ def is_muted(user_id):
     mute = db.session.query(Mute).filter_by(user_id=user_id, is_active=True).first()
     if not mute:
         return False
-    return mute.expires_at > datetime.now(UTC)
+
+    expires = mute.expires_at.replace(tzinfo=UTC)
+    return expires > datetime.now(UTC)
 
 
 def get_mute(mute_id):

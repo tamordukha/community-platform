@@ -164,7 +164,7 @@ def test_cannot_unban_already_unbanned_user(auth_mod_client, auth_foreign_client
 
 def test_ajax_ban_success(auth_mod_client, auth_foreign_client):
     response = auth_mod_client.post(
-            f"/ban/2",
+            "/ban/2",
             data={"ban_reason": "reason"},
             headers={"X-Requested-With": "XMLHttpRequest"}
         )
@@ -178,7 +178,7 @@ def test_ajax_ban_success(auth_mod_client, auth_foreign_client):
 
 def test_ajax_cannot_ban_unauthorized(client, auth_foreign_client):
     response = client.post(
-            f"/ban/2",
+            "/ban/2",
             data={"ban_reason": "reason"},
             headers={"X-Requested-With": "XMLHttpRequest"}
         )
@@ -189,7 +189,7 @@ def test_ajax_cannot_ban_unauthorized(client, auth_foreign_client):
 
 def test_ajax_cannot_ban_missing_user(auth_mod_client, ban):
     response = auth_mod_client.post(
-            f"/ban/2",
+            "/ban/2",
             data={"ban_reason": "reason"},
             headers={"X-Requested-With": "XMLHttpRequest"}
         )
@@ -204,7 +204,7 @@ def test_ajax_unban_success(auth_mod_client, auth_foreign_client, ban):
     ban(auth_mod_client)
 
     response = auth_mod_client.post(
-            f"/unban/1",
+            "/unban/1",
             headers={"X-Requested-With": "XMLHttpRequest"}
         )
     
@@ -219,7 +219,7 @@ def test_ajax_cannot_unban_authorized(auth_mod_client, auth_foreign_client, clie
     ban(auth_mod_client)
 
     response = client.post(
-            f"/unban/1",
+            "/unban/1",
             headers={"X-Requested-With": "XMLHttpRequest"}
         )
 
@@ -229,7 +229,7 @@ def test_ajax_cannot_unban_authorized(auth_mod_client, auth_foreign_client, clie
 
 def test_ajax_cannot_unban_missing_ban(auth_mod_client, auth_foreign_client, unban):
     response = auth_mod_client.post(
-            f"/unban/1",
+            "/unban/1",
             headers={"X-Requested-With": "XMLHttpRequest"}
         )
 
@@ -260,9 +260,6 @@ def test_admin_can_ban_moderator(auth_admin_client, auth_mod_client, ban):
     with app.app_context():
         ban_obj = db.session.get(Ban, 1)
         assert ban_obj is not None and ban_obj.is_active
-
-
-
 
 
 # Unban
@@ -296,5 +293,3 @@ def test_admin_can_unban_moderator(auth_admin_client, auth_mod_client, ban, unba
     with app.app_context():
         ban_obj = db.session.get(Ban, 1)
         assert ban_obj is not None and not ban_obj.is_active
-
-

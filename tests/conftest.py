@@ -282,3 +282,25 @@ def unban():
     def _unban(client, ban_id=1):
         return client.post(f"/unban/{ban_id}")
     return _unban
+
+
+# Mute
+
+@pytest.fixture
+def mute():
+    def _mute(client, profile_user_id=2, reason="reason", duration="24h"):
+        return client.post(
+            f"/mute/{profile_user_id}",
+            data={
+                "mute_reason": reason,
+                "mute_duration": duration
+            }
+        )
+    return _mute
+
+
+@pytest.fixture
+def unmute():
+    def _unmute(client, mute_id=1):
+        return client.post(f"/unmute/{mute_id}")
+    return _unmute
