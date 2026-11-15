@@ -1,25 +1,33 @@
 from datetime import datetime, UTC
 from database.db import db
+from models.user import get_user_by_id
+from models.public import get_public_by_id
 
 class Report(db.Model):
     __tablename__ = "reports"
 
     id = db.Column(db.Integer, primary_key=True)
     reporter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    source_type = db.Column(db.String(20), nullable=False)  # user/public/post/comment/reply
+    source_id = db.Column(db.Integer, nullable=False)
     target_type = db.Column(db.String(20), nullable=False)  # user/public
     target_id = db.Column(db.Integer, nullable=False)
     reason = db.Column(db.String(200), nullable=False)
     is_pending = db.Column(db.Boolean, default=True, nullable=False)
+    resolved_by = db.Column(db.Integer)
+    resolved_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.now(UTC))
 
     __table_args__ = (db.UniqueConstraint('reporter_id', 'target_type', 'target_id', name='unique_report'),)
 
 
-def add_report(target_id, target_type, reporter_id, reason):
+def add_report(source_id, source_type, target_id, target_type, reporter_id, reason):
     if is_reported(target_id, target_type, reporter_id):
         return None
 
     report = Report(
+        source_id = source_id,
+        source_type = source_type,
         target_id   = target_id,
         target_type = target_type,
         reporter_id = reporter_id,
@@ -31,15 +39,17 @@ def add_report(target_id, target_type, reporter_id, reason):
     db.session.commit()
 
 
-def dismiss_report(report_id):
+def dismiss_report(report_id, resolved_by):
     report = db.session.get(Report, report_id)
     if report and report.is_pending:
         report.is_pending = False
+        report.resolved_by = resolved_by
+        report.resolved_at = datetime.now(UTC)
         db.session.commit()
 
 
-def is_reported(target_id, target_type, reporter_id):
-    report = db.session.query(Report).filter_by(target_id=target_id, target_type=target_type, reporter_id=reporter_id, is_pending=True).first()
+def is_reported(source_id, source_type, reporter_id):
+    report = db.session.query(Report).filter_by(source_id=source_id, source_type=source_type, reporter_id=reporter_id, is_pending=True).first()
     return report is not None
 
 
@@ -47,8 +57,16 @@ def get_report(report_id):
     return db.session.get(Report, report_id)
 
 
-def get_filter_reports(target_id=None, target_type=None, reporter_id=None, is_pending=None):
+def get_filter_reports(
+    source_id=None, source_type=None,
+    target_id=None, target_type=None,
+    reporter_id=None, resolved_by=None,
+    is_pending=None
+    ):
     query = db.session.query(Report)
+
+    if source_id and source_type:
+        query = query.filter_by(source_id=source_id, source_type=source_type)
 
     if target_id and target_type:
         query = query.filter_by(target_id=target_id, target_type=target_type)
@@ -56,7 +74,18 @@ def get_filter_reports(target_id=None, target_type=None, reporter_id=None, is_pe
     if reporter_id:
         query = query.filter_by(reporter_id=reporter_id)
 
+    if resolved_by:
+        query = query.filter_by(reporter_id=reporter_id)
+
     if is_pending is not None:
         query = query.filter_by(is_pending=is_pending)
 
     return query.all()
+
+
+def get_target(target_type, target_id):
+    if target_type == "user":
+        return (get_user_by_id(target_id), target_type)
+    if target_type == "public":
+        return (get_public_by_id(target_id), target_type)
+    return None
