@@ -1,5 +1,5 @@
 from flask import Flask, Blueprint, request, redirect, url_for, session, abort, jsonify
-from models.report import add_report, dismiss_report, get_report, is_reported, get_filter_reports, get_target
+from models.report import add_report, dismiss_report, get_report, is_reported, get_filter_reports, get_object
 from models.user import get_user_by_id
 from models.post import get_post
 from models.comment import get_comment
@@ -26,14 +26,14 @@ def report(source_type, source_id):
             return jsonify({"error": "Reason must be 4-200 characters"}), 400
         abort(400)
     
-    if len(get_filter_reports(reporter_id=current_user.id)) >= 5:
+    if len(get_filter_reports(reporter_id=current_user.id, is_pending=True)) >= 5:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "You have reached the maximum of 5 reports"}), 403
         abort(403)
 
-    content = None
     post = None
     target = None
+    source = None
     redirect_to = request.form.get("redirect_to", "feed")
 
     fetch_functions = {
@@ -43,28 +43,29 @@ def report(source_type, source_id):
     }
 
     if source_type in ("user", "public"):
-        target = get_target(source_type, source_id)
+        target = get_object(source_type, source_id)
+        source_obj = target[0]
 
     else:
         fetch_content = fetch_functions.get(source_type)
         if not fetch_content:
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return jsonify({"error": "Invalid source_type"}), 400
+                return jsonify({"error": "Invalid source type"}), 400
             abort(400)
 
-        content = fetch_content(source_id)
-        if not content:
+        source_obj = fetch_content(source_id)
+        if not source_obj:
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify({"error": "Source object not found"}), 404
             abort(404)
 
-        if content.author_id:
-            target = get_target("user", content.author_id)
+        if source_obj.author_id:
+            target = get_object("user", source_obj.author_id)
 
-        post = content if source_type == "post" else get_post(content.post_id)
+        post = source_obj if source_type == "post" else get_post(source_obj.post_id)
         
         if post.public_id:
-            target = get_target("public", post.public_id)
+            target = get_object("public", post.public_id)
     
     target_obj, target_type = target
 
@@ -78,7 +79,7 @@ def report(source_type, source_id):
             return jsonify({"error": "User cannot report himself"}), 403
         abort(403)
 
-    if content and current_user.id == content.author_id:
+    if target_type == "user" and source_type in fetch_functions and current_user.id == target_obj.id:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "User cannot report his own post/content"}), 403
         abort(403)
@@ -128,15 +129,26 @@ def resolve_report(report_id):
 
     if not report.is_pending:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Report is already dismissed"}), 400
-        abort(400)
+            return jsonify({"error": "Report is already dismissed"}), 409
+        abort(409)
 
-    target_obj, target_type = get_target(report.target_type, report.target_id)
+    source = get_object(report.source_type, report.source_id)
 
-    if not target_obj:
+    if not source or not source[0]:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "target object not found"}), 404
+            return jsonify({"error": "invalid source"}), 404
         abort(404)
+
+    source_obj, source_type = source
+
+    target = get_object(report.target_type, report.target_id)
+
+    if not target or not target[0]:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "invalid target"}), 404
+        abort(404)
+
+    target_obj, target_type = target
 
     if current_user.id == report.reporter_id:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -155,7 +167,7 @@ def resolve_report(report_id):
             return jsonify({"error": "You cant dismiss report against your own public"}), 403
         abort(403)
     
-    dismiss_report(report_id)
+    dismiss_report(report_id, current_user.id)
         
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({"report dismissed": True})
