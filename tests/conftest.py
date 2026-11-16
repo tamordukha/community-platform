@@ -304,3 +304,24 @@ def unmute():
     def _unmute(client, mute_id=1):
         return client.post(f"/unmute/{mute_id}")
     return _unmute
+
+
+# Report
+
+@pytest.fixture
+def report():
+    def _report(client, source_type="user", source_id=2, reason="reason", redirect_to="profile"):
+        return client.post(
+            f"/report/{source_type}/{source_id}",
+            data={
+                "redirect_to": redirect_to,
+                "report_reason": reason
+            }
+        )
+    return _report
+
+@pytest.fixture
+def resolve_report():
+    def _resolve_report(client, report_id=1):
+        return client.post(f"/resolve_report/{report_id}")
+    return _resolve_report
