@@ -64,7 +64,8 @@ def get_filter_reports(
     source_id=None, source_type=None,
     target_id=None, target_type=None,
     reporter_id=None, resolved_by=None,
-    is_pending=None
+    is_pending=None, ascending=False,
+    limit=50, offset=0
     ):
     query = db.session.query(Report)
 
@@ -83,7 +84,12 @@ def get_filter_reports(
     if is_pending is not None:
         query = query.filter_by(is_pending=is_pending)
 
-    return query.all()
+    reports = query.offset(offset).limit(limit).all()
+    
+    if ascending:
+        return reports.reverse()
+
+    return reports
 
 
 def get_object(object_type, object_id):
