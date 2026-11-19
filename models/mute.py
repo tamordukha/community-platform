@@ -84,3 +84,14 @@ def get_filter_mutes(
         return mutes.reverse()
 
     return mutes
+
+
+def expire_mutes():
+    now = datetime.now(UTC).replace(tzinfo=None)
+
+    db.session.query(Mute).filter(
+        Mute.is_active == True,
+        Mute.expires_at < now
+    ).update({"is_active": False})
+
+    db.session.commit()

@@ -1,9 +1,10 @@
 from flask import Flask, session, redirect, url_for
+from flask_apscheduler import APScheduler
 from config import Config
 from database.db import db, init_db
 from flask_wtf.csrf import CSRFProtect
 
-#from models.user import get_user_by_id
+from models.mute import expire_mutes
 from models import *
 
 def create_app():
@@ -31,7 +32,6 @@ def register_routes(app):
     from routes.reports import reports_bp
     from routes.moderation import moderation_bp
 
-
     app.register_blueprint(auth_bp)
     app.register_blueprint(posts_bp)
     app.register_blueprint(comments_bp)
@@ -50,6 +50,7 @@ def register_routes(app):
 
 app = create_app()
 
+
 @app.before_request
 def check_banned_user():
     user_id = session.get("user_id")
@@ -58,6 +59,17 @@ def check_banned_user():
         if user and user.is_banned:
             session.clear()
             return redirect(url_for("auth.login"))
+
+
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
+
+@scheduler.task('interval', id='expire_mutes_job', hours=1)
+def scheduled_expire_mutes():
+    with scheduler.app.app_context():
+        expire_mutes()
+
 
 if __name__ == "__main__":
     app.run()
