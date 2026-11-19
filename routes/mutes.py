@@ -92,7 +92,7 @@ def unmute(mute_id):
         abort(404)
 
     if can_manage(current_user, profile_user):
-        unmute_user(mute_id)
+        unmute_user(mute_id, current_user.id)
     else:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "You cant mute user"}), 403

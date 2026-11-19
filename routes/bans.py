@@ -60,7 +60,7 @@ def unban(ban_id):
             return jsonify({"error": "Ban not found"}), 404
         abort(404)
 
-    if ban.is_active == False:
+    if not ban.is_active:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "Ban is not active"}), 400
         abort(400)
@@ -74,7 +74,7 @@ def unban(ban_id):
         abort(404)
 
     if can_manage(current_user, profile_user):
-        unban_user(ban_id)
+        unban_user(ban_id, current_user.id)
     else:
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify({"error": "You cant ban user"}), 403
